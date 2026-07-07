@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+
 class DatabaseSettings(BaseModel):
     host: str = Field(default="localhost")
     port: int = Field(default=5432)
@@ -16,16 +17,19 @@ class DatabaseSettings(BaseModel):
     password: str = Field(default="postgres")
     dbname: str = Field(default="vaeris")
 
+
 class RedisSettings(BaseModel):
     host: str = Field(default="localhost")
     port: int = Field(default=6379)
     default_ttl_forecast: int = Field(default=900)  # 15 minutes
     default_ttl_attribution: int = Field(default=1800)  # 30 minutes
 
+
 class ApiSettings(BaseModel):
     firms_api_key: str = Field(default="")
     weather_api_key: str = Field(default="")
     openaq_api_key: str = Field(default="")
+
 
 class Settings(BaseModel):
     database: DatabaseSettings
@@ -60,7 +64,9 @@ class Settings(BaseModel):
             with open(weights_file, "r") as f:
                 try:
                     weights_data = yaml.safe_load(f)
-                    optimizer_weights = weights_data.get("optimizer", {}).get("weights", {})
+                    optimizer_weights = weights_data.get("optimizer", {}).get(
+                        "weights", {}
+                    )
                 except yaml.YAMLError:
                     # Fallback defaults if YAML is malformed
                     optimizer_weights = {
@@ -69,13 +75,14 @@ class Settings(BaseModel):
                         "health": 0.20,
                         "cost": 0.10,
                     }
-        
+
         return cls(
             database=db_settings,
             redis=redis_settings,
             apis=api_settings,
             optimizer_weights=optimizer_weights,
         )
+
 
 # Global settings instance
 settings = Settings.load()
