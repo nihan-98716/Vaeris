@@ -1,0 +1,8 @@
+# Decision Optimizer Objective Weights
+# These weights are normalized and used in the weighted multi-objective knapsack solver.
+optimizer:
+  weights:
+    aqi: 0.45
+    population: 0.25
+    health: 0.20
+    cost: 0.10

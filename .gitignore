@@ -67,3 +67,7 @@ data/raw/*
 !data/raw/README.md
 data/processed/*
 !data/processed/README.md
+
+# Project Documents
+urban-air-quality-intelligence-prd-v3.md
+implementation-plan-v2.md
