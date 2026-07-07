@@ -32,9 +32,15 @@ class OSMClient:
         out count;
         """
 
+        headers = {
+            "User-Agent": "VaerisAQIPlatform/1.0 (contact: nihananoop2020@gmail.com)"
+        }
         try:
             response = requests.post(
-                self.base_url, data={"data": overpass_query}, timeout=15
+                self.base_url,
+                data={"data": overpass_query},
+                headers=headers,
+                timeout=15,
             )
             response.raise_for_status()
             data = response.json()
