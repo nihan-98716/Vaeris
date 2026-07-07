@@ -20,3 +20,6 @@ ignore = []
 
 [tool.ruff.lint.isort]
 known-first-party = ["backend"]
+
+[tool.pytest.ini_options]
+pythonpath = [".."]

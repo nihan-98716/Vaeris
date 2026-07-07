@@ -17,7 +17,7 @@ def test_rebalance_weights_all_healthy():
     assert weights["traffic"] == 0.30
     assert weights["industry"] == 0.20
     assert weights["weather"] == 0.10
-    assert sum(weights.values()) == 1.0
+    assert sum(weights.values()) == pytest.approx(1.0)
 
 
 def test_rebalance_weights_one_failed():
