@@ -33,7 +33,7 @@ jobs:
         run: ruff check backend
 
       - name: Run Tests
-        run: pytest backend
+        run: python -m pytest backend
 
   frontend:
     name: Frontend CI (Lint & Build)
