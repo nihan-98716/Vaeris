@@ -116,9 +116,15 @@ def add_lag_rolling_features(
     df["aqi_lag_3h"] = grouped.shift(3)
     df["aqi_lag_24h"] = grouped.shift(24)
 
-    df["aqi_rolling_mean_6h"] = grouped.transform(lambda s: s.rolling(6, min_periods=3).mean())
-    df["aqi_rolling_mean_24h"] = grouped.transform(lambda s: s.rolling(24, min_periods=12).mean())
-    df["aqi_rolling_std_24h"] = grouped.transform(lambda s: s.rolling(24, min_periods=12).std())
+    df["aqi_rolling_mean_6h"] = grouped.transform(
+        lambda s: s.rolling(6, min_periods=3).mean()
+    )
+    df["aqi_rolling_mean_24h"] = grouped.transform(
+        lambda s: s.rolling(24, min_periods=12).mean()
+    )
+    df["aqi_rolling_std_24h"] = grouped.transform(
+        lambda s: s.rolling(24, min_periods=12).std()
+    )
 
     return df
 
@@ -166,7 +172,7 @@ def make_training_examples(
         .groupby(group_col)["aqi"]
         .shift(-horizon_hours)
     )
-    features = features.assign(_target=target.values)
+    features["_target"] = target
 
     features = features.dropna(subset=FORECASTING_FEATURE_COLUMNS + ["_target"])
 

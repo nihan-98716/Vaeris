@@ -21,7 +21,6 @@ data, see features.py and the ingestion layer):
     hour_of_day: int               # 0-23, local time at the station
 """
 
-import math
 from typing import List
 
 from backend.models.schemas import RuleResult
@@ -34,10 +33,14 @@ from backend.models.schemas import RuleResult
 FIRE_SEARCH_RADIUS_KM = 100.0
 FIRE_BEARING_TOLERANCE_DEG = 30.0
 TRANSPORT_SPEED_TOLERANCE_HOURS = 3.0  # how many hours of slack allowed when
-                                        # matching a fire detection to a subsequent AQI spike
+# matching a fire detection to a subsequent AQI spike
 
-ROAD_DENSITY_HIGH_TRAFFIC_THRESHOLD = 0.6  # normalized 0-1 density unit, calibrate against real OSM data
-AQI_SPIKE_THRESHOLD = 15.0                  # aqi_now - aqi_rolling_mean_24h, above which we call it a "spike"
+ROAD_DENSITY_HIGH_TRAFFIC_THRESHOLD = (
+    0.6  # normalized 0-1 density unit, calibrate against real OSM data
+)
+AQI_SPIKE_THRESHOLD = (
+    15.0  # aqi_now - aqi_rolling_mean_24h, above which we call it a "spike"
+)
 
 STAGNANT_WIND_SPEED_MS = 1.0  # below this, treat conditions as stagnant (favors local accumulation, lowers single-source confidence)
 
@@ -88,8 +91,13 @@ def fire_attribution_rule(signals: dict) -> RuleResult:
         if bearing_match > FIRE_BEARING_TOLERANCE_DEG:
             continue
 
-        expected_transport_hours = _estimated_transport_hours(distance_km, wind_speed_ms)
-        timing_match = abs(expected_transport_hours - detected_hours_ago) <= TRANSPORT_SPEED_TOLERANCE_HOURS
+        expected_transport_hours = _estimated_transport_hours(
+            distance_km, wind_speed_ms
+        )
+        timing_match = (
+            abs(expected_transport_hours - detected_hours_ago)
+            <= TRANSPORT_SPEED_TOLERANCE_HOURS
+        )
         if not timing_match:
             continue
 
@@ -97,7 +105,8 @@ def fire_attribution_rule(signals: dict) -> RuleResult:
         # the timing match is — both closer to ideal increases confidence.
         bearing_score = 1.0 - (bearing_match / FIRE_BEARING_TOLERANCE_DEG)
         timing_score = 1.0 - (
-            abs(expected_transport_hours - detected_hours_ago) / TRANSPORT_SPEED_TOLERANCE_HOURS
+            abs(expected_transport_hours - detected_hours_ago)
+            / TRANSPORT_SPEED_TOLERANCE_HOURS
         )
         strength = max(0.0, min(1.0, 0.5 * bearing_score + 0.5 * timing_score))
 
@@ -111,7 +120,9 @@ def fire_attribution_rule(signals: dict) -> RuleResult:
                 f"~{expected_transport_hours:.1f}h transport window (fire detected {detected_hours_ago:.1f}h ago)",
             ]
 
-    return RuleResult(source="agricultural_burning", strength=best_strength, evidence=best_evidence)
+    return RuleResult(
+        source="agricultural_burning", strength=best_strength, evidence=best_evidence
+    )
 
 
 def traffic_attribution_rule(signals: dict) -> RuleResult:
@@ -124,7 +135,10 @@ def traffic_attribution_rule(signals: dict) -> RuleResult:
     hour_of_day = signals.get("hour_of_day")
     aqi_spike = signals.get("aqi_now", 0.0) - signals.get("aqi_rolling_mean_24h", 0.0)
 
-    if road_density < ROAD_DENSITY_HIGH_TRAFFIC_THRESHOLD or aqi_spike < AQI_SPIKE_THRESHOLD:
+    if (
+        road_density < ROAD_DENSITY_HIGH_TRAFFIC_THRESHOLD
+        or aqi_spike < AQI_SPIKE_THRESHOLD
+    ):
         return RuleResult(source="traffic", strength=0.0, evidence=[])
 
     is_commute_hour = hour_of_day is not None and (
@@ -134,7 +148,9 @@ def traffic_attribution_rule(signals: dict) -> RuleResult:
         return RuleResult(source="traffic", strength=0.0, evidence=[])
 
     density_score = min(1.0, road_density)
-    strength = round(0.5 + 0.5 * density_score, 3)  # commute-hour match plus density-scaled boost
+    strength = round(
+        0.5 + 0.5 * density_score, 3
+    )  # commute-hour match plus density-scaled boost
     strength = min(strength, 1.0)
 
     evidence = [
@@ -167,9 +183,12 @@ def industrial_attribution_rule(signals: dict) -> RuleResult:
 
     evidence = [
         "Station's 500m buffer is classified as industrial land use",
-        "AQI elevation does not follow a commute-hour diurnal pattern, "
-        "consistent with continuous industrial emission" if not is_commute_hour
-        else "AQI elevation overlaps a commute-hour window, reducing confidence relative to a pure industrial signature",
+        (
+            "AQI elevation does not follow a commute-hour diurnal pattern, "
+            "consistent with continuous industrial emission"
+            if not is_commute_hour
+            else "AQI elevation overlaps a commute-hour window, reducing confidence relative to a pure industrial signature"
+        ),
     ]
     return RuleResult(source="industrial", strength=strength, evidence=evidence)
 

@@ -9,11 +9,10 @@ This module must be run on the held-out test set only, using the time-based
 split from Section 4.3 — never on data used for training or validation.
 """
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import Optional
 
 import numpy as np
-import pandas as pd
 
 
 @dataclass
@@ -34,7 +33,7 @@ class AblationReport:
         lines = [
             f"## Ablation results — model version `{model_version}`, horizon {horizon_hours}h",
             "",
-            f"- RMSE (model, median forecast): reported relative to baselines below",
+            "- RMSE (model, median forecast): reported relative to baselines below",
             f"- RMSE (persistence baseline): {self.rmse_persistence_baseline:.2f}",
             f"- RMSE (moving-average baseline): {self.rmse_moving_average_baseline:.2f}",
             f"- RMSE improvement over persistence: {self.rmse_improvement_over_persistence_pct:.1f}%",
@@ -73,7 +72,9 @@ def persistence_baseline_predictions(y_true_at_t: np.ndarray) -> np.ndarray:
     return np.asarray(y_true_at_t, dtype=float)
 
 
-def moving_average_baseline_predictions(rolling_mean_24h_at_t: np.ndarray) -> np.ndarray:
+def moving_average_baseline_predictions(
+    rolling_mean_24h_at_t: np.ndarray,
+) -> np.ndarray:
     """
     Moving-average baseline: predicted AQI at T+h == rolling 24h mean AQI as of T.
     """
@@ -87,7 +88,9 @@ def pinball_loss(y_true: np.ndarray, y_pred: np.ndarray, quantile: float) -> flo
     return float(np.mean(np.maximum(quantile * diff, (quantile - 1) * diff)))
 
 
-def empirical_coverage(y_true: np.ndarray, lower: np.ndarray, upper: np.ndarray) -> float:
+def empirical_coverage(
+    y_true: np.ndarray, lower: np.ndarray, upper: np.ndarray
+) -> float:
     y_true = np.asarray(y_true, dtype=float)
     lower = np.asarray(lower, dtype=float)
     upper = np.asarray(upper, dtype=float)
@@ -108,7 +111,9 @@ def run_ablation(
     row-for-row against the same held-out test set.
     """
     persistence_pred = persistence_baseline_predictions(aqi_at_prediction_time)
-    moving_avg_pred = moving_average_baseline_predictions(rolling_mean_24h_at_prediction_time)
+    moving_avg_pred = moving_average_baseline_predictions(
+        rolling_mean_24h_at_prediction_time
+    )
 
     rmse_model = compute_rmse(y_true, y_pred_median)
     rmse_persistence = compute_rmse(y_true, persistence_pred)
@@ -131,6 +136,8 @@ def run_ablation(
     if y_pred_lower is not None and y_pred_upper is not None:
         report.pinball_loss_q10 = pinball_loss(y_true, y_pred_lower, 0.1)
         report.pinball_loss_q90 = pinball_loss(y_true, y_pred_upper, 0.9)
-        report.coverage_80pct_interval = empirical_coverage(y_true, y_pred_lower, y_pred_upper)
+        report.coverage_80pct_interval = empirical_coverage(
+            y_true, y_pred_lower, y_pred_upper
+        )
 
     return report

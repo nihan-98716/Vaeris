@@ -12,8 +12,6 @@ shown to anyone outside the team. Do not present the placeholder value as
 a validated figure.
 """
 
-from dataclasses import dataclass
-
 from backend.models.schemas import HealthImpactResult
 
 DISCLAIMER = (
@@ -41,7 +39,9 @@ def estimate_exposure_risk(
     decision-optimization layer), not to make individual health claims.
     """
     excess_concentration = max(0.0, forecast_pm25 - baseline_pm25)
-    indicative_risk_score = excess_concentration * relative_risk_per_unit * exposed_population
+    indicative_risk_score = (
+        excess_concentration * relative_risk_per_unit * exposed_population
+    )
 
     return HealthImpactResult(
         indicative_risk_score=round(indicative_risk_score, 2),

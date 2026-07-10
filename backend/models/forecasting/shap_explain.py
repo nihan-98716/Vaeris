@@ -24,7 +24,9 @@ def _get_explainer():
     if q50_booster is None:
         raise RuntimeError("No q50 model loaded — cannot build a SHAP explainer.")
 
-    from backend.models.forecasting.inference import _loaded_metadata  # local import avoids a circular-import-at-module-load issue
+    from backend.models.forecasting.inference import (
+        _loaded_metadata,  # local import avoids a circular-import-at-module-load issue
+    )
 
     if _explainer_cache["model_version"] != _loaded_metadata["version"]:
         _explainer_cache["explainer"] = shap.TreeExplainer(q50_booster)

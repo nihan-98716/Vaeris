@@ -92,7 +92,9 @@ def predict_from_history(
 
     q50_booster = _loaded_boosters.get("q50")
     if q50_booster is None:
-        raise ModelNotRegisteredError("No q50 (median) model found in the loaded registry entry.")
+        raise ModelNotRegisteredError(
+            "No q50 (median) model found in the loaded registry entry."
+        )
     value = float(q50_booster.predict(feature_row)[0])
 
     if "q10" in _loaded_boosters and "q90" in _loaded_boosters:
@@ -105,7 +107,9 @@ def predict_from_history(
         lower_bound = value
         upper_bound = value
 
-    confidence_tier = "reliable" if horizon_hours <= RELIABLE_HORIZON_CUTOFF_HOURS else "experimental"
+    confidence_tier = (
+        "reliable" if horizon_hours <= RELIABLE_HORIZON_CUTOFF_HOURS else "experimental"
+    )
 
     return ForecastResult(
         value=value,

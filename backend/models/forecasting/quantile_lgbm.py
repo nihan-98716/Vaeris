@@ -17,7 +17,10 @@ import pandas as pd
 
 from backend.models import registry
 from backend.models.forecasting.ablation import run_ablation
-from backend.models.forecasting.features import FEATURE_LIST_VERSION, make_training_examples
+from backend.models.forecasting.features import (
+    FEATURE_LIST_VERSION,
+    make_training_examples,
+)
 from backend.models.forecasting.train_mvp import time_based_split
 
 QUANTILES = {"q10": 0.1, "q50": 0.5, "q90": 0.9}
@@ -54,9 +57,15 @@ def train_quantile_models(raw_df: pd.DataFrame, horizon_hours: int) -> dict:
         )
         boosters[name] = booster
 
-    y_pred_q10 = boosters["q10"].predict(X_test, num_iteration=boosters["q10"].best_iteration)
-    y_pred_q50 = boosters["q50"].predict(X_test, num_iteration=boosters["q50"].best_iteration)
-    y_pred_q90 = boosters["q90"].predict(X_test, num_iteration=boosters["q90"].best_iteration)
+    y_pred_q10 = boosters["q10"].predict(
+        X_test, num_iteration=boosters["q10"].best_iteration
+    )
+    y_pred_q50 = boosters["q50"].predict(
+        X_test, num_iteration=boosters["q50"].best_iteration
+    )
+    y_pred_q90 = boosters["q90"].predict(
+        X_test, num_iteration=boosters["q90"].best_iteration
+    )
 
     ablation_report = run_ablation(
         y_true=y_test.values,
@@ -78,7 +87,9 @@ def train_quantile_models(raw_df: pd.DataFrame, horizon_hours: int) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train the depth-pass quantile forecasting model (Phase 6).")
+    parser = argparse.ArgumentParser(
+        description="Train the depth-pass quantile forecasting model (Phase 6)."
+    )
     parser.add_argument("--data", required=True)
     parser.add_argument("--horizon", type=int, default=24, choices=[24, 48, 72])
     parser.add_argument("--dataset-snapshot", default="unspecified")
@@ -92,7 +103,9 @@ def main():
     boosters = result["boosters"]
     report = result["ablation_report"]
 
-    version_id = f"v_q_h{args.horizon}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+    version_id = (
+        f"v_q_h{args.horizon}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+    )
     model_files = {
         f"model_{name}.txt": booster.model_to_string().encode("utf-8")
         for name, booster in boosters.items()
@@ -121,7 +134,9 @@ def main():
         metadata=metadata,
     )
 
-    print(f"Quantile model (horizon={args.horizon}h, tier={confidence_tier}) registered at: {version_dir}")
+    print(
+        f"Quantile model (horizon={args.horizon}h, tier={confidence_tier}) registered at: {version_dir}"
+    )
     print(report.to_markdown(model_version=version_id, horizon_hours=args.horizon))
 
 

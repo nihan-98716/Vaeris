@@ -11,17 +11,17 @@ Run directly:  python -m backend.models.forecasting.train_mvp --data path/to/his
 """
 
 import argparse
-import json
 from datetime import datetime, timezone
-from pathlib import Path
 
 import lightgbm as lgb
-import numpy as np
 import pandas as pd
 
 from backend.models import registry
 from backend.models.forecasting.ablation import run_ablation
-from backend.models.forecasting.features import FEATURE_LIST_VERSION, make_training_examples
+from backend.models.forecasting.features import (
+    FEATURE_LIST_VERSION,
+    make_training_examples,
+)
 
 HORIZON_HOURS_MVP = 24
 
@@ -38,13 +38,19 @@ REPRESENTATIVE_STATIONS = {
 }
 
 
-def time_based_split(X: pd.DataFrame, y: pd.Series, meta: pd.DataFrame, val_frac=0.2, test_frac=0.2):
+def time_based_split(
+    X: pd.DataFrame, y: pd.Series, meta: pd.DataFrame, val_frac=0.2, test_frac=0.2
+):
     """
     Strict time-based split — never shuffle. See ML Model Specification,
     Section 4.3. Sorts by timestamp, then slices chronologically.
     """
     order = meta["timestamp"].argsort()
-    X, y, meta = X.iloc[order].reset_index(drop=True), y.iloc[order].reset_index(drop=True), meta.iloc[order].reset_index(drop=True)
+    X, y, meta = (
+        X.iloc[order].reset_index(drop=True),
+        y.iloc[order].reset_index(drop=True),
+        meta.iloc[order].reset_index(drop=True),
+    )
 
     n = len(X)
     test_start = int(n * (1 - test_frac))
@@ -52,7 +58,11 @@ def time_based_split(X: pd.DataFrame, y: pd.Series, meta: pd.DataFrame, val_frac
 
     return {
         "train": (X.iloc[:val_start], y.iloc[:val_start], meta.iloc[:val_start]),
-        "val": (X.iloc[val_start:test_start], y.iloc[val_start:test_start], meta.iloc[val_start:test_start]),
+        "val": (
+            X.iloc[val_start:test_start],
+            y.iloc[val_start:test_start],
+            meta.iloc[val_start:test_start],
+        ),
         "test": (X.iloc[test_start:], y.iloc[test_start:], meta.iloc[test_start:]),
     }
 
@@ -113,16 +123,35 @@ def train(raw_df: pd.DataFrame, horizon_hours: int = HORIZON_HOURS_MVP) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train the MVP forecasting model (Phase 2).")
-    parser.add_argument("--data", required=True, help="Path to a CSV of raw hourly station history matching the schema in features.py")
-    parser.add_argument("--dataset-snapshot", default="unspecified", help="Label identifying which data snapshot this was trained on")
+    parser = argparse.ArgumentParser(
+        description="Train the MVP forecasting model (Phase 2)."
+    )
+    parser.add_argument(
+        "--data",
+        required=True,
+        help="Path to a CSV of raw hourly station history matching the schema in features.py",
+    )
+    parser.add_argument(
+        "--dataset-snapshot",
+        default="unspecified",
+        help="Label identifying which data snapshot this was trained on",
+    )
     args = parser.parse_args()
 
     raw_df = pd.read_csv(args.data, parse_dates=["timestamp"])
     if raw_df["timestamp"].dt.tz is None:
         raw_df["timestamp"] = raw_df["timestamp"].dt.tz_localize("UTC")
 
-    result = train(raw_df)
+    # Filter to manually-selected representative stations for the MVP model
+    valid_station_ids = set(REPRESENTATIVE_STATIONS.values())
+    filtered_df = raw_df[raw_df["station_id"].isin(valid_station_ids)].copy()
+    if filtered_df.empty:
+        print(
+            "WARNING: None of the representative stations found in data. Falling back to all stations."
+        )
+        filtered_df = raw_df
+
+    result = train(filtered_df)
     booster = result["booster"]
     report = result["ablation_report"]
 
@@ -150,7 +179,11 @@ def main():
     )
 
     print(f"MVP model registered at: {version_dir}")
-    print(report.to_markdown(model_version=version_id, horizon_hours=result["horizon_hours"]))
+    print(
+        report.to_markdown(
+            model_version=version_id, horizon_hours=result["horizon_hours"]
+        )
+    )
 
 
 if __name__ == "__main__":

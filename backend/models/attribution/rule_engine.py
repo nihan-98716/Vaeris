@@ -16,7 +16,11 @@ from backend.models.attribution.rules import (
 )
 from backend.models.schemas import AttributionResult, RuleResult
 
-ALL_RULES = [fire_attribution_rule, traffic_attribution_rule, industrial_attribution_rule]
+ALL_RULES = [
+    fire_attribution_rule,
+    traffic_attribution_rule,
+    industrial_attribution_rule,
+]
 
 
 def run_attribution(
@@ -43,7 +47,9 @@ def run_attribution(
     raw_scores = {}
     evidence_by_source = {}
     for result in rule_results:
-        strength = 0.0 if result.source in unavailable_sources else result.strength * dampener
+        strength = (
+            0.0 if result.source in unavailable_sources else result.strength * dampener
+        )
         raw_scores[result.source] = strength
         evidence_by_source[result.source] = result.evidence
 
@@ -52,15 +58,27 @@ def run_attribution(
     else:
         confidence_breakdown = normalize(raw_scores)
 
-    if confidence_breakdown == {"unknown": 1.0}:
+    is_unknown = (confidence_breakdown == {"unknown": 1.0}) or (
+        sum(raw_scores.values()) == 0.0
+    )
+    if is_unknown:
         primary_cause = "unknown"
-        evidence = ["No attribution rule produced sufficient evidence; all relevant sources unavailable or below threshold."]
+        evidence = [
+            "No attribution rule produced sufficient evidence; all relevant sources unavailable or below threshold."
+        ]
+        confidence_breakdown = {"unknown": 1.0}
     else:
         primary_cause = max(confidence_breakdown, key=confidence_breakdown.get)
         evidence = evidence_by_source.get(primary_cause, [])
         # Include secondary-cause evidence too, for full traceability in the UI.
-        for source, conf in sorted(confidence_breakdown.items(), key=lambda kv: kv[1], reverse=True):
-            if source != primary_cause and source in evidence_by_source and evidence_by_source[source]:
+        for source, _conf in sorted(
+            confidence_breakdown.items(), key=lambda kv: kv[1], reverse=True
+        ):
+            if (
+                source != primary_cause
+                and source in evidence_by_source
+                and evidence_by_source[source]
+            ):
                 evidence.extend(evidence_by_source[source])
 
     return AttributionResult(
