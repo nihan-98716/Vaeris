@@ -23,26 +23,18 @@ data, see features.py and the ingestion layer):
 
 from typing import List
 
+from backend.config import settings
 from backend.models.schemas import RuleResult
 
-# --- tunable thresholds (move to config/weights.yaml in the real backend
-#     per the Implementation Plan's cross-cutting config requirement —
-#     kept as module constants here for a self-contained, readable reference
-#     implementation) ---
-
-FIRE_SEARCH_RADIUS_KM = 100.0
-FIRE_BEARING_TOLERANCE_DEG = 30.0
-TRANSPORT_SPEED_TOLERANCE_HOURS = 3.0  # how many hours of slack allowed when
-# matching a fire detection to a subsequent AQI spike
-
+# --- tunable thresholds loaded dynamically from settings ---
+FIRE_SEARCH_RADIUS_KM = settings.attribution.fire_search_radius_km
+FIRE_BEARING_TOLERANCE_DEG = settings.attribution.fire_bearing_tolerance_deg
+TRANSPORT_SPEED_TOLERANCE_HOURS = settings.attribution.transport_speed_tolerance_hours
 ROAD_DENSITY_HIGH_TRAFFIC_THRESHOLD = (
-    0.6  # normalized 0-1 density unit, calibrate against real OSM data
+    settings.attribution.road_density_high_traffic_threshold
 )
-AQI_SPIKE_THRESHOLD = (
-    15.0  # aqi_now - aqi_rolling_mean_24h, above which we call it a "spike"
-)
-
-STAGNANT_WIND_SPEED_MS = 1.0  # below this, treat conditions as stagnant (favors local accumulation, lowers single-source confidence)
+AQI_SPIKE_THRESHOLD = settings.attribution.aqi_spike_threshold
+STAGNANT_WIND_SPEED_MS = settings.attribution.stagnant_wind_speed_ms
 
 
 def _angle_difference(a: float, b: float) -> float:
