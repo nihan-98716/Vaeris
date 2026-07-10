@@ -32,10 +32,20 @@ class ApiSettings(BaseModel):
     openaq_api_key: str = Field(default="")
 
 
+class AttributionSettings(BaseModel):
+    fire_search_radius_km: float = Field(default=100.0)
+    fire_bearing_tolerance_deg: float = Field(default=30.0)
+    transport_speed_tolerance_hours: float = Field(default=3.0)
+    road_density_high_traffic_threshold: float = Field(default=0.6)
+    aqi_spike_threshold: float = Field(default=15.0)
+    stagnant_wind_speed_ms: float = Field(default=1.0)
+
+
 class Settings(BaseModel):
     database: DatabaseSettings
     redis: RedisSettings
     apis: ApiSettings
+    attribution: AttributionSettings
     optimizer_weights: Dict[str, float] = Field(default_factory=dict)
 
     @classmethod
@@ -77,10 +87,32 @@ class Settings(BaseModel):
                         "cost": 0.10,
                     }
 
+        attribution_settings = AttributionSettings(
+            fire_search_radius_km=float(
+                os.getenv("ATTRIBUTION_FIRE_RADIUS_KM", "100.0")
+            ),
+            fire_bearing_tolerance_deg=float(
+                os.getenv("ATTRIBUTION_FIRE_BEARING_TOLERANCE_DEG", "30.0")
+            ),
+            transport_speed_tolerance_hours=float(
+                os.getenv("ATTRIBUTION_TRANSPORT_SPEED_TOLERANCE_HOURS", "3.0")
+            ),
+            road_density_high_traffic_threshold=float(
+                os.getenv("ATTRIBUTION_ROAD_DENSITY_HIGH_TRAFFIC_THRESHOLD", "0.6")
+            ),
+            aqi_spike_threshold=float(
+                os.getenv("ATTRIBUTION_AQI_SPIKE_THRESHOLD", "15.0")
+            ),
+            stagnant_wind_speed_ms=float(
+                os.getenv("ATTRIBUTION_STAGNANT_WIND_SPEED_MS", "1.0")
+            ),
+        )
+
         return cls(
             database=db_settings,
             redis=redis_settings,
             apis=api_settings,
+            attribution=attribution_settings,
             optimizer_weights=optimizer_weights,
         )
 
