@@ -50,11 +50,11 @@ def _get_active_fires_for_attribution(
         logger.info(
             "Attribution: Fetching fires from offline snapshot database fallback."
         )
-        snapshot_path = os.path.join(
-            "C:\\Users\\Public\\Projects\\Vaeris",
-            "data",
-            "snapshots",
-            "delhi_2024-11-13_to_2024-11-18.json",
+        from pathlib import Path
+
+        base_dir = Path(__file__).resolve().parent.parent.parent.parent
+        snapshot_path = str(
+            base_dir / "data" / "snapshots" / "delhi_2024-11-13_to_2024-11-18.json"
         )
         if os.path.exists(snapshot_path):
             try:

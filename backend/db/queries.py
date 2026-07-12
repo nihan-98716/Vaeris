@@ -6,6 +6,7 @@ PostGIS spatial and attribute queries supporting model feature stores and live A
 
 import math
 import os
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 import pandas as pd
@@ -208,17 +209,12 @@ def get_offline_snapshot_history(
     """
     Fallback method loading historical data snapshot from CSV to support offline demos.
     """
-    csv_path = os.path.join(
-        "C:\\Users\\Public\\Projects\\Vaeris",
-        "data",
-        "processed",
-        "delhi_flat_history.csv",
-    )
-    if not os.path.exists(csv_path):
+    base_dir = Path(__file__).resolve().parent.parent.parent
+    csv_path = base_dir / "data" / "processed" / "delhi_flat_history.csv"
+    if not csv_path.exists():
         # try root/data path
-        csv_path = os.path.join(
-            "C:\\Users\\Public\\Projects\\Vaeris", "data", "delhi_flat_history.csv"
-        )
+        csv_path = base_dir / "data" / "delhi_flat_history.csv"
+    csv_path = str(csv_path)
 
     if not os.path.exists(csv_path):
         logger.error(f"Offline history snapshot CSV not found at: {csv_path}")
