@@ -82,7 +82,7 @@ function App() {
         let forecastData = null;
         let attributionData = null;
 
-        if (apiConnected) {
+        try {
           const [fRes, aRes] = await Promise.all([
             fetch(forecastUrl),
             fetch(attributionUrl)
@@ -90,7 +90,12 @@ function App() {
           if (fRes.ok && aRes.ok) {
             forecastData = await fRes.json();
             attributionData = await aRes.json();
+            setApiConnected(true);
+          } else {
+            setApiConnected(false);
           }
+        } catch (err) {
+          setApiConnected(false);
         }
 
         // Fallback/Mock data if offline or API failed
