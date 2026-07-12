@@ -118,9 +118,7 @@ def gather_attribution_signals(location: LatLon) -> tuple[dict, list[str]]:
     # 1. Query nearest station and history (online DB first, fallback to offline)
     station = queries.find_nearest_station(location.latitude, location.longitude)
     if station:
-        history_df = queries.get_recent_station_history(
-            station["id"], limit_hours=48
-        )
+        history_df = queries.get_recent_station_history(station["id"], limit_hours=48)
     else:
         history_df = pd.DataFrame()
 
@@ -128,10 +126,7 @@ def gather_attribution_signals(location: LatLon) -> tuple[dict, list[str]]:
         # Fallback to offline Delhi snapshot
         logger.info("Attribution: Using offline snapshot history fallback.")
         fallback_station = "DL001"
-        if (
-            station
-            and station["id"] in ["DL001", "DL002", "DL003", "DL004", "DL005"]
-        ):
+        if station and station["id"] in ["DL001", "DL002", "DL003", "DL004", "DL005"]:
             fallback_station = station["id"]
         history_df = queries.get_offline_snapshot_history(
             fallback_station, limit_hours=48
@@ -155,12 +150,8 @@ def gather_attribution_signals(location: LatLon) -> tuple[dict, list[str]]:
     wind_speed = latest_row.get("wind_speed")
 
     if wind_dir is None or wind_speed is None:
-        logger.warning(
-            "Weather metrics are missing; degrading attribution rules."
-        )
-        unavailable_sources.append(
-            "agricultural_burning"
-        )  # requires wind trajectory
+        logger.warning("Weather metrics are missing; degrading attribution rules.")
+        unavailable_sources.append("agricultural_burning")  # requires wind trajectory
         wind_dir = 180.0
         wind_speed = 0.0
 
@@ -168,9 +159,7 @@ def gather_attribution_signals(location: LatLon) -> tuple[dict, list[str]]:
     t_start = latest_ts - pd.Timedelta(hours=24)
     t_end = latest_ts
     db_fires = _get_active_fires_for_attribution(t_start, t_end, latest_ts)
-    fire_events = _extract_fire_events_for_attribution(
-        db_fires, location, latest_ts
-    )
+    fire_events = _extract_fire_events_for_attribution(db_fires, location, latest_ts)
 
     # Compile the final signals structure
     signals = {
@@ -203,9 +192,7 @@ async def get_attribution(req: AttributionRequest = Depends()):
             logger.info(f"Cache hit for key: {cache_key}")
             return AttributionResponse(**json.loads(cached_data))
         except Exception:
-            logger.error(
-                "Failed to parse cached attribution data", exc_info=True
-            )
+            logger.error("Failed to parse cached attribution data", exc_info=True)
 
     # 2. Compile signals and execute rule engine
     location = LatLon(latitude=req.latitude, longitude=req.longitude)

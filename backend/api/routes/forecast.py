@@ -46,9 +46,7 @@ def database_history_provider(location: LatLon) -> pd.DataFrame:
     fallback_station = "DL001"
     if station and station["id"] in ["DL001", "DL002", "DL003", "DL004", "DL005"]:
         fallback_station = station["id"]
-    return queries.get_offline_snapshot_history(
-        fallback_station, limit_hours=48
-    )
+    return queries.get_offline_snapshot_history(fallback_station, limit_hours=48)
 
 
 @router.get("", response_model=ForecastResponse)

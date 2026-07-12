@@ -17,6 +17,7 @@ from backend.logging import logger
 DEFAULT_LAT = 28.6139
 DEFAULT_LON = 77.2090
 
+
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     Computes great-circle distance between two coordinates in kilometers.
@@ -42,8 +43,9 @@ def calculate_bearing(lat1: float, lon1: float, lat2: float, lon2: float) -> flo
     lat2 = math.radians(lat2)
 
     y = math.sin(dlon) * math.cos(lat2)
-    x = (math.cos(lat1) * math.sin(lat2) -
-         math.sin(lat1) * math.cos(lat2) * math.cos(dlon))
+    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(
+        dlon
+    )
 
     bearing = math.atan2(y, x)
     return (math.degrees(bearing) + 360) % 360
@@ -96,9 +98,7 @@ def _compute_row_fire_features(
                     f_50 += 1
 
                 # Upwind flag check
-                bearing = calculate_bearing(
-                    lat, lon, f["latitude"], f["longitude"]
-                )
+                bearing = calculate_bearing(lat, lon, f["latitude"], f["longitude"])
                 diff = abs(bearing - wind_dir) % 360
                 ang_diff = min(diff, 360 - diff)
                 if ang_diff <= 30.0:
@@ -195,18 +195,30 @@ def get_recent_station_history(station_id: str, limit_hours: int = 48) -> pd.Dat
 
         return df
     except Exception:
-        logger.error(f"Failed to query recent station history for '{station_id}' from PostGIS", exc_info=True)
+        logger.error(
+            f"Failed to query recent station history for '{station_id}' from PostGIS",
+            exc_info=True,
+        )
         return pd.DataFrame()
 
 
-def get_offline_snapshot_history(station_id: Optional[str] = None, limit_hours: int = 48) -> pd.DataFrame:
+def get_offline_snapshot_history(
+    station_id: Optional[str] = None, limit_hours: int = 48
+) -> pd.DataFrame:
     """
     Fallback method loading historical data snapshot from CSV to support offline demos.
     """
-    csv_path = os.path.join("C:\\Users\\Public\\Projects\\Vaeris", "data", "processed", "delhi_flat_history.csv")
+    csv_path = os.path.join(
+        "C:\\Users\\Public\\Projects\\Vaeris",
+        "data",
+        "processed",
+        "delhi_flat_history.csv",
+    )
     if not os.path.exists(csv_path):
         # try root/data path
-        csv_path = os.path.join("C:\\Users\\Public\\Projects\\Vaeris", "data", "delhi_flat_history.csv")
+        csv_path = os.path.join(
+            "C:\\Users\\Public\\Projects\\Vaeris", "data", "delhi_flat_history.csv"
+        )
 
     if not os.path.exists(csv_path):
         logger.error(f"Offline history snapshot CSV not found at: {csv_path}")
