@@ -1,0 +1,2 @@
+# Preserve LF line endings for LightGBM model files to prevent parser crashes on Windows
+model_registry/**/*.txt text eol=lf
