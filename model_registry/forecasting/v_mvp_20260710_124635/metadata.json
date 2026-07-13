@@ -1,0 +1,21 @@
+{
+  "version": "v_mvp_20260710_124635",
+  "trained_on": "2026-07-10T12:46:35.393676+00:00",
+  "dataset_snapshot": "delhi_2024-11-13_to_2024-11-18",
+  "feature_list_version": "v1",
+  "horizon_hours": 24,
+  "quantiles": [
+    "q50"
+  ],
+  "n_train": 307,
+  "n_val": 77,
+  "n_test": 96,
+  "rmse_model_vs_persistence": 44.309536645535836,
+  "rmse_model_vs_moving_average": 44.309536645535836,
+  "rmse_persistence_baseline": 59.32519841236662,
+  "rmse_moving_average_baseline": 112.64424587377833,
+  "rmse_improvement_over_persistence_pct": 25.31076535548627,
+  "pinball_loss_q10": null,
+  "pinball_loss_q90": null,
+  "coverage_80pct_interval": null
+}

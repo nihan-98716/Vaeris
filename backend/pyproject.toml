@@ -16,7 +16,7 @@ select = [
     "C",  # flake8-comprehensions
     "B",  # flake8-bugbear
 ]
-ignore = ["E501", "B905"]
+ignore = ["E501", "B905", "B008"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["backend"]
