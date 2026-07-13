@@ -8,7 +8,7 @@ Sets up api routing, versioning boundary, and global health check endpoint.
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.routes import attribution, forecast
+from backend.api.routes import attribution, decision, forecast
 
 app = FastAPI(
     title="Vaeris API",
@@ -39,6 +39,7 @@ async def health_check():
 v1_router = APIRouter(prefix="/api/v1")
 v1_router.include_router(forecast.router)
 v1_router.include_router(attribution.router)
+v1_router.include_router(decision.router)
 
 # Register routers on app
 app.include_router(v1_router)

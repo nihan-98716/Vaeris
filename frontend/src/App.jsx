@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
+import DecisionPanel from './components/DecisionPanel';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -580,6 +581,9 @@ function App() {
               </div>
             ) : null}
           </div>
+
+          {/* Decision Optimizer Panel */}
+          <DecisionPanel baselineAqi={selectedStation ? selectedStation.aqi : 160} apiBase={API_BASE} />
 
         </section>
 
