@@ -43,4 +43,3 @@ v1_router.include_router(decision.router)
 
 # Register routers on app
 app.include_router(v1_router)
-

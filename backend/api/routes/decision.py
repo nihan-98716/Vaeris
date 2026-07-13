@@ -24,18 +24,18 @@ async def get_decision(req: DecisionRequest = Depends()):
             f"Solving decision optimization with constraints: "
             f"budget={req.budget}, inspectors={req.inspectors}, max_travel_time={req.max_travel_time_hours}h"
         )
-        
+
         result = optimize_interventions(
             budget=req.budget,
             inspectors=req.inspectors,
-            max_travel_time_hours=req.max_travel_time_hours
+            max_travel_time_hours=req.max_travel_time_hours,
         )
-        
+
         return DecisionResponse(**result)
-        
+
     except Exception as e:
         logger.error("Decision optimization endpoint failed", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Internal decision optimization solver error: {str(e)}"
+            detail=f"Internal decision optimization solver error: {str(e)}",
         ) from e

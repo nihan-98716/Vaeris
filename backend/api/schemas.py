@@ -82,19 +82,13 @@ class DecisionRequest(BaseModel):
     """
 
     budget: float = Field(
-        default=5000.0,
-        description="Available monetary/resource budget limit",
-        ge=0.0
+        default=5000.0, description="Available monetary/resource budget limit", ge=0.0
     )
     inspectors: int = Field(
-        default=5,
-        description="Available inspector personnel count",
-        ge=0
+        default=5, description="Available inspector personnel count", ge=0
     )
     max_travel_time_hours: float = Field(
-        default=3.0,
-        description="Maximum travel/dispatch time limit in hours",
-        ge=0.0
+        default=3.0, description="Maximum travel/dispatch time limit in hours", ge=0.0
     )
 
 
@@ -105,7 +99,9 @@ class InterventionDetail(BaseModel):
 
     id: str = Field(..., description="Unique intervention identifier")
     name: str = Field(..., description="Name of the intervention action")
-    description: str = Field(..., description="Human-readable description of the action")
+    description: str = Field(
+        ..., description="Human-readable description of the action"
+    )
     cost: float = Field(..., description="Cost of executing the action")
     inspectors_required: int = Field(..., description="Number of inspectors required")
     travel_time_hours: float = Field(..., description="Travel time in hours")
@@ -123,15 +119,18 @@ class DecisionResponse(BaseModel):
     selected_interventions: List[InterventionDetail] = Field(
         ..., description="Optimal subset of selected interventions"
     )
-    total_aqi_reduction: float = Field(..., description="Total combined expected AQI reduction")
+    total_aqi_reduction: float = Field(
+        ..., description="Total combined expected AQI reduction"
+    )
     total_cost: float = Field(..., description="Total cost of selected interventions")
     total_inspectors_used: int = Field(..., description="Total inspectors deployed")
     total_population_affected: int = Field(..., description="Total population affected")
-    total_health_benefit: float = Field(..., description="Total combined indicative health benefit score")
+    total_health_benefit: float = Field(
+        ..., description="Total combined indicative health benefit score"
+    )
     remaining_budget: float = Field(..., description="Unspent budget")
     remaining_inspectors: int = Field(..., description="Unused inspectors")
     disclaimer: str = Field(
         default="Indicative respiratory exposure risk, estimated using published WHO/Lancet exposure-response coefficients. Not a clinical or epidemiological forecast.",
-        description="Medical and predictive disclaimer"
+        description="Medical and predictive disclaimer",
     )
-
