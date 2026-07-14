@@ -52,15 +52,9 @@ def run_attribution(
     else:
         confidence_breakdown = normalize(raw_scores)
 
-    is_unknown = (confidence_breakdown == {"unknown": 1.0}) or (
-        sum(raw_scores.values()) == 0.0
-    )
-    if is_unknown:
+    if confidence_breakdown == {"unknown": 1.0}:
         primary_cause = "unknown"
-        evidence = [
-            "No attribution rule produced sufficient evidence; all relevant sources unavailable or below threshold."
-        ]
-        confidence_breakdown = {"unknown": 1.0}
+        evidence = ["No attribution rule produced sufficient evidence; all relevant sources unavailable or below threshold."]
     else:
         primary_cause = max(confidence_breakdown, key=confidence_breakdown.get)
         evidence = evidence_by_source.get(primary_cause, [])

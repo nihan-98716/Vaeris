@@ -33,9 +33,7 @@ class RegistryError(Exception):
     pass
 
 
-def _component_dir(component: str, registry_root: str = None) -> Path:
-    if registry_root is None:
-        registry_root = DEFAULT_REGISTRY_ROOT
+def _component_dir(component: str, registry_root: str = DEFAULT_REGISTRY_ROOT) -> Path:
     return Path(registry_root) / component
 
 
@@ -44,7 +42,7 @@ def save_version(
     version_id: str,
     model_files: Dict[str, bytes],
     metadata: dict,
-    registry_root: str = None,
+    registry_root: str = DEFAULT_REGISTRY_ROOT,
     set_as_latest: bool = True,
 ) -> Path:
     """
@@ -72,13 +70,13 @@ def save_version(
     return version_dir
 
 
-def mark_latest(component: str, version_id: str, registry_root: str = None) -> None:
+def mark_latest(component: str, version_id: str, registry_root: str = DEFAULT_REGISTRY_ROOT) -> None:
     comp_dir = _component_dir(component, registry_root)
     comp_dir.mkdir(parents=True, exist_ok=True)
     (comp_dir / "latest.json").write_text(json.dumps({"version_dir": version_id}, indent=2))
 
 
-def load_latest(component: str, registry_root: str = None) -> Tuple[Path, dict]:
+def load_latest(component: str, registry_root: str = DEFAULT_REGISTRY_ROOT) -> Tuple[Path, dict]:
     """
     Returns (version_dir_path, metadata_dict) for the currently-active version.
     Raises RegistryError if no version has been registered yet.
@@ -99,7 +97,7 @@ def load_latest(component: str, registry_root: str = None) -> Tuple[Path, dict]:
     return version_dir, metadata
 
 
-def delete_version(component: str, version_id: str, registry_root: str = None) -> None:
+def delete_version(component: str, version_id: str, registry_root: str = DEFAULT_REGISTRY_ROOT) -> None:
     """Utility for cleaning up during testing — not used in the normal training flow."""
     version_dir = _component_dir(component, registry_root) / version_id
     if version_dir.exists():
