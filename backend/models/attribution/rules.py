@@ -21,7 +21,6 @@ data, see features.py and the ingestion layer):
     hour_of_day: int               # 0-23, local time at the station
 """
 
-import math
 from typing import List
 
 from backend.models.schemas import RuleResult

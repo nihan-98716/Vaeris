@@ -9,11 +9,10 @@ This module must be run on the held-out test set only, using the time-based
 split from Section 4.3 — never on data used for training or validation.
 """
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import Optional
 
 import numpy as np
-import pandas as pd
 
 
 @dataclass
@@ -34,7 +33,7 @@ class AblationReport:
         lines = [
             f"## Ablation results — model version `{model_version}`, horizon {horizon_hours}h",
             "",
-            f"- RMSE (model, median forecast): reported relative to baselines below",
+            "- RMSE (model, median forecast): reported relative to baselines below",
             f"- RMSE (persistence baseline): {self.rmse_persistence_baseline:.2f}",
             f"- RMSE (moving-average baseline): {self.rmse_moving_average_baseline:.2f}",
             f"- RMSE improvement over persistence: {self.rmse_improvement_over_persistence_pct:.1f}%",

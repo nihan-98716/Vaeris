@@ -12,8 +12,6 @@ shown to anyone outside the team. Do not present the placeholder value as
 a validated figure.
 """
 
-from dataclasses import dataclass
-
 from backend.models.schemas import HealthImpactResult
 
 DISCLAIMER = (

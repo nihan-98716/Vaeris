@@ -71,7 +71,7 @@ def run_attribution(
         primary_cause = max(confidence_breakdown, key=confidence_breakdown.get)
         evidence = evidence_by_source.get(primary_cause, [])
         # Include secondary-cause evidence too, for full traceability in the UI.
-        for source, conf in sorted(
+        for source, _conf in sorted(
             confidence_breakdown.items(), key=lambda kv: kv[1], reverse=True
         ):
             if (

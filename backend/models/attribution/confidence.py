@@ -19,7 +19,7 @@ def normalize(scores: Dict[str, float]) -> Dict[str, float]:
     total = sum(scores.values())
     if total <= 0:
         n = len(scores) or 1
-        return {k: 1.0 / n for k in scores}
+        return dict.fromkeys(scores, 1.0 / n)
     return {k: v / total for k, v in scores.items()}
 
 

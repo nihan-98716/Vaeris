@@ -11,12 +11,9 @@ Run directly:  python -m backend.models.forecasting.train_mvp --data path/to/his
 """
 
 import argparse
-import json
 from datetime import datetime, timezone
-from pathlib import Path
 
 import lightgbm as lgb
-import numpy as np
 import pandas as pd
 
 from backend.models import registry
