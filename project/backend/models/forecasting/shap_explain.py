@@ -18,30 +18,22 @@ from backend.models.forecasting.inference import _load_boosters, _loaded_booster
 _explainer_cache = {"explainer": None, "model_version": None}
 
 
-def _get_explainer(horizon_hours: int = 24):
+def _get_explainer():
     _load_boosters()
-    booster_key = f"{horizon_hours}_q50"
-    q50_booster = _loaded_boosters.get(booster_key)
+    q50_booster = _loaded_boosters.get("q50")
     if q50_booster is None:
-        q50_booster = _loaded_boosters.get("q50")
-    if q50_booster is None:
-        raise RuntimeError(
-            f"No q50 model loaded for horizon {horizon_hours}h — cannot build a SHAP explainer."
-        )
+        raise RuntimeError("No q50 model loaded — cannot build a SHAP explainer.")
 
-    from backend.models.forecasting.inference import (
-        _loaded_metadata,
-    )  # local import avoids a circular-import-at-module-load issue
+    from backend.models.forecasting.inference import _loaded_metadata  # local import avoids a circular-import-at-module-load issue
 
-    cache_key = f"{_loaded_metadata['version']}_{horizon_hours}"
-    if _explainer_cache["model_version"] != cache_key:
+    if _explainer_cache["model_version"] != _loaded_metadata["version"]:
         _explainer_cache["explainer"] = shap.TreeExplainer(q50_booster)
-        _explainer_cache["model_version"] = cache_key
+        _explainer_cache["model_version"] = _loaded_metadata["version"]
 
     return _explainer_cache["explainer"]
 
 
-def explain(feature_row: pd.DataFrame, horizon_hours: int = 24) -> Dict[str, float]:
+def explain(feature_row: pd.DataFrame) -> Dict[str, float]:
     """
     feature_row: a 1-row DataFrame with columns == FORECASTING_FEATURE_COLUMNS,
     as produced by features.build_inference_feature_row().
@@ -56,15 +48,13 @@ def explain(feature_row: pd.DataFrame, horizon_hours: int = 24) -> Dict[str, flo
             "build it via features.build_inference_feature_row(), don't construct it manually."
         )
 
-    explainer = _get_explainer(horizon_hours)
+    explainer = _get_explainer()
     shap_values = explainer.shap_values(feature_row)
 
     contributions = dict(zip(FORECASTING_FEATURE_COLUMNS, shap_values[0]))
     return dict(sorted(contributions.items(), key=lambda kv: abs(kv[1]), reverse=True))
 
 
-def explain_as_waterfall_data(
-    feature_row: pd.DataFrame, horizon_hours: int = 24
-) -> List[Tuple[str, float]]:
+def explain_as_waterfall_data(feature_row: pd.DataFrame) -> List[Tuple[str, float]]:
     """Convenience wrapper returning an ordered list of (feature, contribution) tuples, for direct chart rendering."""
-    return list(explain(feature_row, horizon_hours).items())
+    return list(explain(feature_row).items())

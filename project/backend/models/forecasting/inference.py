@@ -57,29 +57,13 @@ def _load_boosters(force_reload: bool = False) -> None:
 
     version_dir, metadata = registry.load_latest("forecasting")
     boosters = {}
-
-    horizons = metadata.get("horizons_hours", [24, 48, 72])
-    quantiles = metadata.get("quantiles", ["q10", "q50", "q90"])
-
-    # First load per-horizon specific models
-    for h in horizons:
-        for q in quantiles:
-            model_path = version_dir / f"model_{h}_{q}.txt"
-            if model_path.exists():
-                boosters[f"{h}_{q}"] = lgb.Booster(model_file=str(model_path))
-
-    # Also load generic/fallback single-joint models (e.g. model_q50.txt)
-    for q in quantiles:
-        model_path = version_dir / f"model_{q}.txt"
-        if model_path.exists():
-            boosters[q] = lgb.Booster(model_file=str(model_path))
-
-    # Validate that we have at least one median estimator loaded
-    has_median = any(k == "q50" or k.endswith("_q50") for k in boosters)
-    if not has_median:
-        raise ModelNotRegisteredError(
-            f"No q50 (median) models found in the registry entry at {version_dir}."
-        )
+    for quantile_name in metadata.get("quantiles", ["q50"]):
+        model_path = version_dir / f"model_{quantile_name}.txt"
+        if not model_path.exists():
+            raise ModelNotRegisteredError(
+                f"metadata.json lists quantile '{quantile_name}' but {model_path} is missing."
+            )
+        boosters[quantile_name] = lgb.Booster(model_file=str(model_path))
 
     _loaded_boosters.clear()
     _loaded_boosters.update(boosters)
@@ -106,60 +90,22 @@ def predict_from_history(
 
     feature_row = build_inference_feature_row(station_history_df, horizon_hours)
 
-    # 1. Predict Median (q50)
-    q50_key = f"{horizon_hours}_q50"
-    if q50_key not in _loaded_boosters:
-        q50_key = "q50"
-
-    q50_booster = _loaded_boosters.get(q50_key)
+    q50_booster = _loaded_boosters.get("q50")
     if q50_booster is None:
-        raise ModelNotRegisteredError(
-            f"No q50 (median) model found for horizon {horizon_hours}h."
-        )
+        raise ModelNotRegisteredError("No q50 (median) model found in the loaded registry entry.")
     value = float(q50_booster.predict(feature_row)[0])
 
-    # 2. Predict Bounds (q10 & q90)
-    q10_key = f"{horizon_hours}_q10"
-    if q10_key not in _loaded_boosters:
-        q10_key = "q10"
-
-    q90_key = f"{horizon_hours}_q90"
-    if q90_key not in _loaded_boosters:
-        q90_key = "q90"
-
-    if q10_key in _loaded_boosters and q90_key in _loaded_boosters:
-        lower_bound = float(_loaded_boosters[q10_key].predict(feature_row)[0])
-        upper_bound = float(_loaded_boosters[q90_key].predict(feature_row)[0])
-
-        # Enforce monotonicity / prevent quantile crossing post-hoc
-        lower_bound = min(lower_bound, value)
-        upper_bound = max(upper_bound, value)
-
-        # Apply CQR Calibration if available
-        calibration_path = _loaded_version_dir / f"calibration_{horizon_hours}.json"
-        if calibration_path.exists():
-            try:
-                from backend.models.forecasting.cqr_calibration import CQRCalibrator
-
-                calibrator = CQRCalibrator()
-                calibrator.load(calibration_path)
-                lower_bound, upper_bound = calibrator.calibrate(
-                    lower_bound, upper_bound
-                )
-                # Keep bounds physically reasonable and non-crossing
-                lower_bound = max(0.0, min(lower_bound, value))
-                upper_bound = max(upper_bound, value)
-            except Exception:
-                # Fall back to raw bounds if loading calibrator fails
-                pass
+    if "q10" in _loaded_boosters and "q90" in _loaded_boosters:
+        lower_bound = float(_loaded_boosters["q10"].predict(feature_row)[0])
+        upper_bound = float(_loaded_boosters["q90"].predict(feature_row)[0])
     else:
-        # MVP fallback
+        # MVP model: point-estimate only, no quantile bounds available yet.
+        # Per the spec, the interface shape stays identical — bounds simply
+        # collapse to the point estimate until the depth-pass model is registered.
         lower_bound = value
         upper_bound = value
 
-    confidence_tier = (
-        "reliable" if horizon_hours <= RELIABLE_HORIZON_CUTOFF_HOURS else "experimental"
-    )
+    confidence_tier = "reliable" if horizon_hours <= RELIABLE_HORIZON_CUTOFF_HOURS else "experimental"
 
     return ForecastResult(
         value=value,

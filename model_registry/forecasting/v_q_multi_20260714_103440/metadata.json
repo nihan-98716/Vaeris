@@ -1,0 +1,62 @@
+{
+  "version": "v_q_multi_20260714_103440",
+  "trained_on": "2026-07-14T10:34:40.276719+00:00",
+  "dataset_snapshot": "synthetic_demo_v1",
+  "feature_list_version": "v1",
+  "horizons_hours": [
+    24,
+    48,
+    72
+  ],
+  "reliable_horizon_cutoff_hours": 48,
+  "quantiles": [
+    "q10",
+    "q50",
+    "q90"
+  ],
+  "n_train": 16597,
+  "n_val": 4151,
+  "n_test": 5187,
+  "overall_ablation": {
+    "rmse_model_vs_persistence": 29.654567550782538,
+    "rmse_model_vs_moving_average": 29.654567550782538,
+    "rmse_persistence_baseline": 30.693221475644183,
+    "rmse_moving_average_baseline": 31.929211884048534,
+    "rmse_improvement_over_persistence_pct": 3.383984720163187,
+    "pinball_loss_q10": 2.9245280706203456,
+    "pinball_loss_q90": 8.267292282278982,
+    "coverage_80pct_interval": 0.5729708887603624
+  },
+  "per_horizon_ablation": {
+    "24": {
+      "rmse_model_vs_persistence": 28.230070339749243,
+      "rmse_model_vs_moving_average": 28.230070339749243,
+      "rmse_persistence_baseline": 25.241629163756564,
+      "rmse_moving_average_baseline": 29.543007998839553,
+      "rmse_improvement_over_persistence_pct": -11.839335553996895,
+      "pinball_loss_q10": 2.8823147726734835,
+      "pinball_loss_q90": 7.784095258849304,
+      "coverage_80pct_interval": 0.5790074158585282
+    },
+    "48": {
+      "rmse_model_vs_persistence": 30.296629584325366,
+      "rmse_model_vs_moving_average": 30.296629584325366,
+      "rmse_persistence_baseline": 32.966276681947534,
+      "rmse_moving_average_baseline": 33.07976210440964,
+      "rmse_improvement_over_persistence_pct": 8.098115305463285,
+      "pinball_loss_q10": 2.9349362016300997,
+      "pinball_loss_q90": 8.472061938473468,
+      "coverage_80pct_interval": 0.5685367264314632
+    },
+    "72": {
+      "rmse_model_vs_persistence": 30.41606519826046,
+      "rmse_model_vs_moving_average": 30.41606519826046,
+      "rmse_persistence_baseline": 33.29946080764738,
+      "rmse_moving_average_baseline": 33.082328203286174,
+      "rmse_improvement_over_persistence_pct": 8.658985879809604,
+      "pinball_loss_q10": 2.9573751397024477,
+      "pinball_loss_q90": 8.55644046205139,
+      "coverage_80pct_interval": 0.5712609970674487
+    }
+  }
+}

@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Model binaries — only metadata.json is meant to be committed
+# (ML Model Specification, Section 6.10). Re-generate locally via
+# train_mvp.py / quantile_lgbm.py.
+model_registry/**/*.txt
+model_registry/**/*.pkl
+model_registry/**/latest.json
+
+node_modules/
+.env
