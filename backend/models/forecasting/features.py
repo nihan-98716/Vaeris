@@ -33,11 +33,17 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
-FEATURE_LIST_VERSION = "v1"
+FEATURE_LIST_VERSION = "v2"
 
 # The exact, ordered feature set fed to the model. Both training and
 # inference must produce a DataFrame with exactly these columns, in this
 # order, before calling the model.
+#
+# v2 additions (ERA5-sourced):
+#   blh_log              — log1p(boundary_layer_height): more normally distributed
+#                          than raw metres; stronger signal for winter trapping events
+#   surface_pressure_hpa — surface pressure in hPa; correlated with anticyclonic
+#                          conditions that suppress vertical mixing
 FORECASTING_FEATURE_COLUMNS: List[str] = [
     "aqi_lag_1h",
     "aqi_lag_3h",
@@ -52,6 +58,8 @@ FORECASTING_FEATURE_COLUMNS: List[str] = [
     "humidity",
     "precipitation",
     "boundary_layer_height",
+    "blh_log",
+    "surface_pressure_hpa",
     "hour_of_day_sin",
     "hour_of_day_cos",
     "day_of_week",
@@ -116,9 +124,59 @@ def add_lag_rolling_features(
     df["aqi_lag_3h"] = grouped.shift(3)
     df["aqi_lag_24h"] = grouped.shift(24)
 
-    df["aqi_rolling_mean_6h"] = grouped.transform(lambda s: s.rolling(6, min_periods=3).mean())
-    df["aqi_rolling_mean_24h"] = grouped.transform(lambda s: s.rolling(24, min_periods=12).mean())
-    df["aqi_rolling_std_24h"] = grouped.transform(lambda s: s.rolling(24, min_periods=12).std())
+    df["aqi_rolling_mean_6h"] = grouped.transform(
+        lambda s: s.rolling(6, min_periods=3).mean()
+    )
+    df["aqi_rolling_mean_24h"] = grouped.transform(
+        lambda s: s.rolling(24, min_periods=12).mean()
+    )
+    df["aqi_rolling_std_24h"] = grouped.transform(
+        lambda s: s.rolling(24, min_periods=12).std()
+    )
+
+    return df
+
+
+def add_era5_derived_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Derives ERA5-sourced features from columns already present in the DataFrame.
+
+    Expects:
+        boundary_layer_height : float (metres) — may be NaN if ERA5 not available
+        surface_pressure_hpa  : float (hPa)    — may be NaN if ERA5 not available
+
+    Produces:
+        blh_log              : log1p(boundary_layer_height) — log-scaled BLH.
+                               NaN-safe: falls back to column mean (or log1p(500)
+                               if all NaN) so the downstream dropna in
+                               make_training_examples never discards rows that have
+                               a valid BLH observation.
+        surface_pressure_hpa : passed through as-is (added here if not already
+                               present). NaN-safe: filled with ISA standard
+                               atmosphere (1013.25 hPa) so rows without ERA5
+                               data are not silently dropped during training.
+
+    When real ERA5 data is available (via ERA5Loader.merge_into_df), the NaN
+    fallbacks are never needed — all rows will carry real values.
+    """
+    df = df.copy()
+
+    # blh_log — log1p(BLH) with mean-imputation fallback
+    blh = df["boundary_layer_height"].astype(float)
+    blh_log = np.log1p(blh.clip(lower=0.0))
+    fallback_blh_log = (
+        float(blh_log.mean()) if blh_log.notna().any() else np.log1p(500.0)
+    )
+    df["blh_log"] = blh_log.fillna(fallback_blh_log)
+
+    # surface_pressure_hpa — ISA standard atmosphere fallback
+    _ISA_PRESSURE_HPA = 1013.25
+    if "surface_pressure_hpa" not in df.columns:
+        df["surface_pressure_hpa"] = _ISA_PRESSURE_HPA
+    else:
+        df["surface_pressure_hpa"] = (
+            df["surface_pressure_hpa"].astype(float).fillna(_ISA_PRESSURE_HPA)
+        )
 
     return df
 
@@ -133,6 +191,7 @@ def build_feature_frame(raw_df: pd.DataFrame) -> pd.DataFrame:
     df = add_time_features(df)
     df = add_wind_features(df)
     df = add_lag_rolling_features(df)
+    df = add_era5_derived_features(df)
     df["land_use_category_code"] = _encode_land_use(df["land_use_category"])
     df["fire_upwind_flag"] = df["fire_upwind_flag"].astype(int)
     return df
