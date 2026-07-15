@@ -48,12 +48,31 @@ RELIABLE_HORIZON_CUTOFF_HOURS = 48
 
 BASE_PARAMS = {
     "objective": "quantile",
-    "num_leaves": 31,
-    "learning_rate": 0.05,
-    "min_child_samples": 20,
-    "feature_fraction": 0.8,
-    "bagging_fraction": 0.8,
     "verbose": -1,
+}
+
+HORIZON_PARAMS = {
+    24: {
+        "num_leaves": 15,
+        "learning_rate": 0.03,
+        "min_child_samples": 25,
+        "feature_fraction": 0.7,
+        "bagging_fraction": 0.7,
+    },
+    48: {
+        "num_leaves": 31,
+        "learning_rate": 0.05,
+        "min_child_samples": 20,
+        "feature_fraction": 0.8,
+        "bagging_fraction": 0.8,
+    },
+    72: {
+        "num_leaves": 63,
+        "learning_rate": 0.07,
+        "min_child_samples": 15,
+        "feature_fraction": 0.9,
+        "bagging_fraction": 0.9,
+    },
 }
 
 
@@ -94,6 +113,7 @@ def train_quantile_models(raw_df: pd.DataFrame, horizons=DEFAULT_HORIZONS) -> di
         for name, alpha in QUANTILES.items():
             params = dict(
                 BASE_PARAMS,
+                **HORIZON_PARAMS.get(h, HORIZON_PARAMS[48]),
                 alpha=alpha,
                 metric="quantile",
             )
