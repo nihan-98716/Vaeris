@@ -75,7 +75,9 @@ def save_version(
 def mark_latest(component: str, version_id: str, registry_root: str = None) -> None:
     comp_dir = _component_dir(component, registry_root)
     comp_dir.mkdir(parents=True, exist_ok=True)
-    (comp_dir / "latest.json").write_text(json.dumps({"version_dir": version_id}, indent=2))
+    (comp_dir / "latest.json").write_text(
+        json.dumps({"version_dir": version_id}, indent=2)
+    )
 
 
 def load_latest(component: str, registry_root: str = None) -> Tuple[Path, dict]:

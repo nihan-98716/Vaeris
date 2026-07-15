@@ -23,7 +23,9 @@ def normalize(scores: Dict[str, float]) -> Dict[str, float]:
     return {k: v / total for k, v in scores.items()}
 
 
-def renormalize_excluding(scores: Dict[str, float], excluded: Iterable[str]) -> Dict[str, float]:
+def renormalize_excluding(
+    scores: Dict[str, float], excluded: Iterable[str]
+) -> Dict[str, float]:
     """
     Graceful degradation formula (ML Model Specification, Section 7.4):
     if a source's underlying data is unavailable (e.g. FIRMS is down, so

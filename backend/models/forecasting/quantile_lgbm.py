@@ -34,7 +34,10 @@ import pandas as pd
 
 from backend.models import registry
 from backend.models.forecasting.ablation import run_ablation
-from backend.models.forecasting.features import FEATURE_LIST_VERSION, make_training_examples
+from backend.models.forecasting.features import (
+    FEATURE_LIST_VERSION,
+    make_training_examples,
+)
 from backend.models.forecasting.train_mvp import time_based_split
 
 QUANTILES = {"q10": 0.1, "q50": 0.5, "q90": 0.9}
@@ -80,13 +83,21 @@ def _build_multi_horizon_splits(raw_df: pd.DataFrame, horizons):
             pd.concat(metas, ignore_index=True),
         )
 
-    return _concat(train_parts), _concat(val_parts), _concat(test_parts), test_parts_by_horizon
+    return (
+        _concat(train_parts),
+        _concat(val_parts),
+        _concat(test_parts),
+        test_parts_by_horizon,
+    )
 
 
 def train_quantile_models(raw_df: pd.DataFrame, horizons=DEFAULT_HORIZONS) -> dict:
-    (X_train, y_train, _), (X_val, y_val, _), (X_test, y_test, meta_test), test_by_horizon = (
-        _build_multi_horizon_splits(raw_df, horizons)
-    )
+    (
+        (X_train, y_train, _),
+        (X_val, y_val, _),
+        (X_test, y_test, meta_test),
+        test_by_horizon,
+    ) = _build_multi_horizon_splits(raw_df, horizons)
 
     boosters = {}
     for name, alpha in QUANTILES.items():
@@ -106,9 +117,15 @@ def train_quantile_models(raw_df: pd.DataFrame, horizons=DEFAULT_HORIZONS) -> di
     # individual horizon, so the depth/breadth trade-off from training on
     # combined data is fully visible rather than hidden behind one pooled number.
     def _report_for(X_slice, y_slice):
-        y_pred_q10 = boosters["q10"].predict(X_slice, num_iteration=boosters["q10"].best_iteration)
-        y_pred_q50 = boosters["q50"].predict(X_slice, num_iteration=boosters["q50"].best_iteration)
-        y_pred_q90 = boosters["q90"].predict(X_slice, num_iteration=boosters["q90"].best_iteration)
+        y_pred_q10 = boosters["q10"].predict(
+            X_slice, num_iteration=boosters["q10"].best_iteration
+        )
+        y_pred_q50 = boosters["q50"].predict(
+            X_slice, num_iteration=boosters["q50"].best_iteration
+        )
+        y_pred_q90 = boosters["q90"].predict(
+            X_slice, num_iteration=boosters["q90"].best_iteration
+        )
         return run_ablation(
             y_true=y_slice.values,
             y_pred_median=y_pred_q50,
@@ -135,7 +152,9 @@ def train_quantile_models(raw_df: pd.DataFrame, horizons=DEFAULT_HORIZONS) -> di
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train the depth-pass quantile forecasting model (Phase 6).")
+    parser = argparse.ArgumentParser(
+        description="Train the depth-pass quantile forecasting model (Phase 6)."
+    )
     parser.add_argument("--data", required=True)
     parser.add_argument(
         "--horizons",
@@ -174,7 +193,9 @@ def main():
         "n_val": result["n_val"],
         "n_test": result["n_test"],
         "overall_ablation": overall_report.to_dict(),
-        "per_horizon_ablation": {str(h): r.to_dict() for h, r in per_horizon_reports.items()},
+        "per_horizon_ablation": {
+            str(h): r.to_dict() for h, r in per_horizon_reports.items()
+        },
     }
 
     version_dir = registry.save_version(
@@ -186,7 +207,11 @@ def main():
 
     print(f"Quantile model (horizons={horizons}) registered at: {version_dir}")
     print(f"## Overall ablation (all horizons pooled) — model version `{version_id}`\n")
-    print(overall_report.to_markdown(model_version=version_id, horizon_hours=0).replace(", horizon 0h", ""))
+    print(
+        overall_report.to_markdown(model_version=version_id, horizon_hours=0).replace(
+            ", horizon 0h", ""
+        )
+    )
     for h, r in per_horizon_reports.items():
         print()
         print(r.to_markdown(model_version=version_id, horizon_hours=h))
