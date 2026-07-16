@@ -43,17 +43,17 @@ _SOURCE_WEIGHT_MAP: Dict[str, Dict[str, float]] = {
 }
 
 # Default weights when source is unknown / mixed
-_DEFAULT_SOURCE_WEIGHTS: Dict[str, float] = {
-    k: 0.3
-    for k in [
+_DEFAULT_SOURCE_WEIGHTS: Dict[str, float] = dict.fromkeys(
+    [
         "stubble_burning_enforcement",
         "halt_construction",
         "road_sprinklers",
         "odd_even_rationing",
         "restrict_industries",
         "waste_burning_fines",
-    ]
-}
+    ],
+    0.3,
+)
 
 
 def compute_projected_aqi(

@@ -16,8 +16,8 @@ Tests confirm:
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.decision.scenario_approximation import compute_projected_aqi
 from backend.decision.optimizer import INTERVENTION_CATALOG
+from backend.decision.scenario_approximation import compute_projected_aqi
 
 # ─── Unit tests: compute_projected_aqi ────────────────────────────────────────
 
