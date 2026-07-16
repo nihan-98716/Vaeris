@@ -199,3 +199,83 @@ class ScenarioResponse(BaseModel):
         ),
         description="Disclaimer for the projected AQI value",
     )
+
+
+class EvidenceScoreResponse(BaseModel):
+    """
+    Consolidated confidence score and check verification status items.
+    """
+
+    confidence_score: float = Field(
+        ..., description="Overall confidence score as a percentage (0-100)"
+    )
+    checklist: List[str] = Field(
+        ..., description="Verification checklist of signals cross-checked"
+    )
+    status: str = Field(
+        ..., description="Confidence status level ('high' | 'medium' | 'low')"
+    )
+
+
+class InvestigateRequest(BaseModel):
+    """
+    Validated request parameters for running the full orchestrator investigation pipeline.
+    """
+
+    latitude: float = Field(
+        ..., description="Latitude coordinate, WGS84 format", ge=-90.0, le=90.0
+    )
+    longitude: float = Field(
+        ..., description="Longitude coordinate, WGS84 format", ge=-180.0, le=180.0
+    )
+    horizon_hours: int = Field(
+        default=24,
+        description="Forecast horizon range in hours (1-72)",
+        ge=1,
+        le=72,
+    )
+    budget: float = Field(
+        default=5000.0, description="Available monetary/resource budget limit", ge=0.0
+    )
+    inspectors: int = Field(
+        default=5, description="Available inspector personnel count", ge=0
+    )
+    max_travel_time_hours: float = Field(
+        default=3.0, description="Maximum travel/dispatch time limit in hours", ge=0.0
+    )
+    enable_llm: bool = Field(
+        default=True, description="Flag to enable LLM summary generation"
+    )
+
+
+class InvestigateResponse(BaseModel):
+    """
+    Consolidated investigation report returned by the agent orchestrator.
+    """
+
+    latitude: float = Field(..., description="Target latitude coordinate")
+    longitude: float = Field(..., description="Target longitude coordinate")
+    current_aqi: float = Field(
+        ..., description="Current measured AQI at target location"
+    )
+    primary_cause: str = Field(..., description="Attributed primary cause of pollution")
+    forecast: ForecastResponse = Field(..., description="AQI forecasting results")
+    attribution: AttributionResponse = Field(
+        ..., description="Pollution source attribution results"
+    )
+    decision: DecisionResponse = Field(
+        ..., description="Optimal intervention decisions"
+    )
+    scenario: ScenarioResponse = Field(
+        ..., description="Before/after scenario projections"
+    )
+    evidence_score: EvidenceScoreResponse = Field(
+        ..., description="Consolidated verification and confidence checklist"
+    )
+    summary: str = Field(
+        ..., description="Natural language summary prose of the investigation"
+    )
+    llm_error: bool = Field(
+        default=False,
+        description="True if LLM summary failed/timed out, falling back to deterministic summary",
+    )
