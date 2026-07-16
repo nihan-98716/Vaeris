@@ -134,3 +134,67 @@ class DecisionResponse(BaseModel):
         default="Indicative respiratory exposure risk, estimated using published WHO/Lancet exposure-response coefficients. Not a clinical or epidemiological forecast.",
         description="Medical and predictive disclaimer",
     )
+
+
+class ScenarioRequest(BaseModel):
+    """
+    Validated request for before/after scenario approximation.
+    """
+
+    current_aqi: float = Field(
+        ..., description="Current measured AQI at the target location", ge=0.0
+    )
+    budget: float = Field(
+        default=5000.0, description="Available monetary/resource budget limit", ge=0.0
+    )
+    inspectors: int = Field(
+        default=5, description="Available inspector personnel count", ge=0
+    )
+    max_travel_time_hours: float = Field(
+        default=3.0, description="Maximum travel/dispatch time limit in hours", ge=0.0
+    )
+    primary_cause: str = Field(
+        default="traffic",
+        description="Dominant pollution source driving current AQI. "
+        "One of: 'traffic', 'agricultural_burning', 'industrial'.",
+    )
+
+
+class ScenarioResponse(BaseModel):
+    """
+    Validated response for the projected AQI scenario calculation.
+    Combines the optimizer recommendation with the source-weighted AQI projection.
+    """
+
+    # Decision optimizer outputs (pass-through summary)
+    decision: DecisionResponse = Field(
+        ..., description="Optimal intervention set from the decision optimizer"
+    )
+
+    # Scenario projection outputs
+    projected_aqi: float = Field(
+        ..., description="Projected (estimated) AQI after applying recommended interventions"
+    )
+    reduction_applied: float = Field(
+        ..., description="Weighted AQI reduction after accounting for source targeting"
+    )
+    source_weight_factor: float = Field(
+        ...,
+        description="Average effectiveness weight of selected interventions vs. dominant source (0–1)",
+    )
+    confidence: str = Field(
+        ...,
+        description="Approximation confidence: 'high' (≥0.7), 'medium' (≥0.4), or 'low' (<0.4)",
+    )
+    current_aqi: float = Field(..., description="Echo of the input current AQI")
+    percent_reduction: float = Field(
+        ..., description="Percentage reduction in AQI relative to current"
+    )
+    disclaimer: str = Field(
+        default=(
+            "Projected AQI is an indicative estimate. "
+            "Actual outcomes depend on meteorological conditions, enforcement fidelity, "
+            "and source variability not modelled here."
+        ),
+        description="Disclaimer for the projected AQI value",
+    )
