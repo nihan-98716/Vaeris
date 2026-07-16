@@ -13,7 +13,7 @@
  *   3. Never blocks the UI — shows loading skeletons while fetching
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowDown,
   TrendingDown,

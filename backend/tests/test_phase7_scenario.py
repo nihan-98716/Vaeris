@@ -19,8 +19,8 @@ from fastapi.testclient import TestClient
 from backend.decision.scenario_approximation import compute_projected_aqi
 from backend.decision.optimizer import INTERVENTION_CATALOG
 
-
 # ─── Unit tests: compute_projected_aqi ────────────────────────────────────────
+
 
 class TestComputeProjectedAqi:
     """Tests for the core scenario approximation function."""
@@ -57,9 +57,13 @@ class TestComputeProjectedAqi:
     def test_mismatched_source_gives_lower_weight(self):
         """stubble_burning_enforcement against traffic source should give low weight."""
         interventions = self._stub_interventions(["stubble_burning_enforcement"])
-        result_matched    = compute_projected_aqi(400.0, interventions, "agricultural_burning")
+        result_matched = compute_projected_aqi(
+            400.0, interventions, "agricultural_burning"
+        )
         result_mismatched = compute_projected_aqi(400.0, interventions, "traffic")
-        assert result_matched["reduction_applied"] > result_mismatched["reduction_applied"]
+        assert (
+            result_matched["reduction_applied"] > result_mismatched["reduction_applied"]
+        )
 
     def test_projected_aqi_never_exceeds_current(self):
         """Interventions should never increase AQI."""
@@ -68,7 +72,9 @@ class TestComputeProjectedAqi:
         )
         for cause in ("agricultural_burning", "traffic", "industrial"):
             result = compute_projected_aqi(300.0, interventions, cause)
-            assert result["projected_aqi"] <= 300.0, f"Projected AQI exceeded current for {cause}"
+            assert (
+                result["projected_aqi"] <= 300.0
+            ), f"Projected AQI exceeded current for {cause}"
 
     def test_projected_aqi_floor_is_10(self):
         """Even with enormous reductions the floor is AQI 10."""
@@ -125,18 +131,24 @@ class TestComputeProjectedAqi:
             "traffic",
         )
         for key in (
-            "projected_aqi", "reduction_applied", "source_weight_factor",
-            "confidence", "current_aqi", "percent_reduction",
+            "projected_aqi",
+            "reduction_applied",
+            "source_weight_factor",
+            "confidence",
+            "current_aqi",
+            "percent_reduction",
         ):
             assert key in result, f"Missing key: {key}"
 
 
 # ─── API endpoint tests: /api/v1/decision/scenario ───────────────────────────
 
+
 @pytest.fixture(scope="module")
 def client():
     """Provides a TestClient for the FastAPI app (DB not required for this endpoint)."""
     from backend.api.main import app
+
     with TestClient(app) as c:
         yield c
 
@@ -165,8 +177,13 @@ class TestScenarioEndpoint:
         assert resp.status_code == 200
         data = resp.json()
         for key in (
-            "projected_aqi", "reduction_applied", "source_weight_factor",
-            "confidence", "current_aqi", "percent_reduction", "decision",
+            "projected_aqi",
+            "reduction_applied",
+            "source_weight_factor",
+            "confidence",
+            "current_aqi",
+            "percent_reduction",
+            "decision",
         ):
             assert key in data, f"Missing field: {key}"
 

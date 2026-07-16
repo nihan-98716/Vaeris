@@ -173,7 +173,8 @@ class ScenarioResponse(BaseModel):
 
     # Scenario projection outputs
     projected_aqi: float = Field(
-        ..., description="Projected (estimated) AQI after applying recommended interventions"
+        ...,
+        description="Projected (estimated) AQI after applying recommended interventions",
     )
     reduction_applied: float = Field(
         ..., description="Weighted AQI reduction after accounting for source targeting"

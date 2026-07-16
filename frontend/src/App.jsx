@@ -675,7 +675,7 @@ function App() {
                 selected location.
               </p>
               <p style={{ marginTop: 8 }}>
-                <strong style={{ color: 'var(--text-main)' }}>"Projected AQI"</strong> is an
+                <strong style={{ color: 'var(--text-main)' }}>&quot;Projected AQI&quot;</strong> is an
                 indicative estimate — not a deterministic forecast. Actual outcomes depend on
                 meteorological conditions, enforcement fidelity, and real-time source dynamics.
               </p>

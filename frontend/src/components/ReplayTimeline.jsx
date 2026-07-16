@@ -12,7 +12,7 @@
  *  - Station legend, weather stats row, offline badge
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -44,7 +44,6 @@ import {
 
 const STATION_COLORS = ['#00f0ff', '#a855f7', '#f59e0b', '#10b981', '#f43f5e'];
 const STATION_NAMES  = ['Anand Vihar', 'Narela', 'Bawana', 'RK Puram', 'Mandir Marg'];
-const AQI_KEYS = ['aqi_DL001', 'aqi_DL002', 'aqi_DL003', 'aqi_DL004', 'aqi_DL005'];
 
 const KEY_EVENTS = [
   { date: 'Nov 14', label: 'GRAP-III Invoked',   color: '#ef4444' },

@@ -43,10 +43,6 @@ function diurnal(h, base, amplitude, peakHour = 14) {
   return base + amplitude * Math.sin((Math.PI * (h + 5.5 - peakHour)) / 12);
 }
 
-function sin14(h) {
-  return Math.sin(2 * Math.PI * (h + 5.5 - 14) / 24);
-}
-
 // ─── Hourly data (0-143 = 6 days × 24 hours) ─────────────────────────────────
 
 const makeDay = (dayLabel, hourOffset, cfg) =>
