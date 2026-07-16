@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import DecisionPanel from './components/DecisionPanel';
+import BeforeAfterPanel from './components/BeforeAfterPanel';
+import ReplayTimeline from './components/ReplayTimeline';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -22,6 +24,7 @@ import {
   Layers, 
   Clock, 
   TrendingUp,
+  TrendingDown,
   Cpu,
   Info,
   ShieldCheck
@@ -46,6 +49,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [apiConnected, setApiConnected] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  // Phase 7: tab navigation
+  const [activeTab, setActiveTab] = useState('live'); // 'live' | 'replay' | 'before-after'
 
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -322,8 +327,15 @@ function App() {
 
   const aqiDetails = getAqiCategory(selectedStation ? selectedStation.aqi : 160);
 
+  // ── Tab definitions ──────────────────────────────────────────────────────────
+  const TABS = [
+    { id: 'live',         label: 'LIVE INTELLIGENCE',  Icon: Activity     },
+    { id: 'replay',       label: 'NOV 13–18 REPLAY',   Icon: Clock        },
+    { id: 'before-after', label: 'BEFORE / AFTER',     Icon: TrendingDown },
+  ];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '16px', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '16px', gap: '12px' }}>
       
       {/* 1. Header Bar */}
       <header className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px' }}>
@@ -356,7 +368,40 @@ function App() {
         </div>
       </header>
 
-      {/* 2. Main Analytics Workspace */}
+      {/* 1b. Tab Navigation */}
+      <nav
+        className="glass-panel"
+        style={{
+          display: 'flex', gap: 4, padding: 4,
+          borderRadius: 10,
+        }}
+      >
+        {TABS.map(({ id, label, Icon }) => {
+          const isActive = activeTab === id;
+          return (
+            <button
+              key={id}
+              id={`tab-${id}`}
+              onClick={() => setActiveTab(id)}
+              style={{
+                flex: 1, padding: '7px 14px', borderRadius: 7, cursor: 'pointer',
+                background:  isActive ? 'rgba(0,240,255,0.1)'  : 'transparent',
+                border:      isActive ? '1px solid rgba(0,240,255,0.3)' : '1px solid transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                fontSize: 11, fontWeight: isActive ? 700 : 500,
+                color: isActive ? 'var(--color-primary)' : 'var(--text-muted)',
+                transition: 'all 0.2s ease',
+                boxShadow: isActive ? '0 0 12px rgba(0,240,255,0.08)' : 'none',
+              }}
+            >
+              <Icon size={12} />{label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* 2. Main content — switches by active tab */}
+      {activeTab === 'live' && (
       <main style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', flex: 1, minHeight: 0 }}>
         
         {/* Left Side: Live Spatial Map */}
@@ -588,10 +633,88 @@ function App() {
         </section>
 
       </main>
-      
+      )}
+
+      {/* Replay tab */}
+      {activeTab === 'replay' && (
+        <section
+          className="glass-panel"
+          style={{ flex: 1, minHeight: 0, padding: '20px', overflowY: 'auto' }}
+        >
+          <ReplayTimeline />
+        </section>
+      )}
+
+      {/* Before / After tab */}
+      {activeTab === 'before-after' && (
+        <section
+          className="glass-panel"
+          style={{ flex: 1, minHeight: 0, padding: '20px', overflowY: 'auto',
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}
+        >
+          {/* Left — explanation */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <TrendingDown size={18} color="var(--color-primary)" />
+              <div>
+                <h2 style={{ fontSize: 15, fontWeight: 700 }}>Before / After Optimizer</h2>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Projected AQI after applying recommended interventions</p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)',
+                borderRadius: 8, padding: '14px 16px', fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6,
+              }}
+            >
+              <p>
+                The optimizer selects the best combination of interventions within your budget
+                and inspector constraints, then the scenario approximation weights each
+                intervention by how directly it targets the dominant pollution source at the
+                selected location.
+              </p>
+              <p style={{ marginTop: 8 }}>
+                <strong style={{ color: 'var(--text-main)' }}>"Projected AQI"</strong> is an
+                indicative estimate — not a deterministic forecast. Actual outcomes depend on
+                meteorological conditions, enforcement fidelity, and real-time source dynamics.
+              </p>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(0,240,255,0.04)', border: '1px solid rgba(0,240,255,0.1)',
+                borderRadius: 8, padding: '10px 14px',
+              }}
+            >
+              <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 4 }}>CURRENTLY SELECTED LOCATION</div>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>
+                {selectedStation ? selectedStation.name : 'Custom Coordinates'}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                AQI: <strong style={{ color: 'var(--color-primary)' }}>{selectedStation ? selectedStation.aqi : 160}</strong>
+                {' · '}
+                Primary cause: <strong style={{ color: 'var(--color-primary)' }}>
+                  {attribution?.primary_cause?.replace('_', ' ') || 'traffic'}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Right — live panel */}
+          <div style={{ overflowY: 'auto' }}>
+            <BeforeAfterPanel
+              currentAqi={selectedStation ? selectedStation.aqi : 300}
+              primaryCause={attribution?.primary_cause || 'traffic'}
+              apiBase={API_BASE}
+            />
+          </div>
+        </section>
+      )}
+
       {/* 3. Footer / Operations status */}
       <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-dark)' }}>
-        <span>VAERIS OPERATIONAL SUITE v0.1.0-MVP</span>
+        <span>VAERIS OPERATIONAL SUITE v0.1.0-MVP · Phase 7</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <Clock size={10} /> Delhi Local Time: {new Date().toLocaleTimeString()} (UTC+5:30)
         </span>
