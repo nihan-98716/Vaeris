@@ -6,9 +6,13 @@ Delhi, Mumbai, Chennai, and Bengaluru.
 Supports live DB queries with fallback to curated high-fidelity offline snapshots.
 """
 
+import json
+from concurrent.futures import ThreadPoolExecutor
+
 import requests
 from fastapi import APIRouter, HTTPException
 
+from backend.api.cache import get_cached_value, set_cached_value
 from backend.api.schemas import CityComparisonReport, MultiCityResponse
 from backend.config import settings
 from backend.db.connection import get_db_cursor
@@ -193,59 +197,74 @@ def fetch_live_aqi_from_openaq(lat: float, lon: float) -> float:
     return None
 
 
+def process_city(city) -> CityComparisonReport:
+    """
+    Processes a single city's OpenAQ query and fallback logic in a worker thread.
+    """
+    current_aqi = fetch_live_aqi_from_openaq(city["latitude"], city["longitude"])
+
+    if current_aqi is None:
+        station = find_nearest_station(city["latitude"], city["longitude"])
+        current_aqi = city["current_aqi"]
+        if station:
+            latest_aqi = fetch_latest_aqi_for_station(station["id"])
+            if latest_aqi is not None and latest_aqi >= 100.0:
+                current_aqi = latest_aqi
+
+    scale = current_aqi / city["current_aqi"]
+    projected_aqi = round(city["projected_aqi"] * scale, 1)
+    reduction_pct = (
+        round(((current_aqi - projected_aqi) / current_aqi) * 100, 2)
+        if current_aqi > 0
+        else 0.0
+    )
+    health_benefit = round(city["health_benefit"] * scale, 1)
+
+    return CityComparisonReport(
+        city_name=city["city_name"],
+        latitude=city["latitude"],
+        longitude=city["longitude"],
+        current_aqi=round(current_aqi, 1),
+        primary_cause=city["primary_cause"],
+        projected_aqi=projected_aqi,
+        reduction_pct=reduction_pct,
+        health_benefit=health_benefit,
+        status_level=(
+            "high"
+            if current_aqi > 200.0
+            else "medium" if current_aqi > 100.0 else "low"
+        ),
+        optimal_actions=city["optimal_actions"],
+    )
+
+
 @router.get("", response_model=MultiCityResponse)
 async def get_multi_city_comparison():
     """
     Fetches comparative metrics for Delhi, Mumbai, Chennai, and Bengaluru.
-    Queries the live OpenAQ API directly using OpenAQ API credentials.
+    Queries the live OpenAQ API directly using OpenAQ API credentials,
+    executes queries in parallel, and caches reports in Redis.
     """
-    reports = []
+    cache_key = "multicity:report"
+    cached = get_cached_value(cache_key)
+    if cached:
+        logger.info("multicity: Cache hit")
+        try:
+            return json.loads(cached)
+        except Exception:
+            logger.warning(
+                "multicity: Failed to parse cached JSON, refetching...", exc_info=True
+            )
+
+    logger.info("multicity: Cache miss. Fetching live comparisons in parallel...")
     try:
-        for city in CURATED_CITIES:
-            # Query live AQI directly from OpenAQ REST API
-            current_aqi = fetch_live_aqi_from_openaq(
-                city["latitude"], city["longitude"]
-            )
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            reports = list(executor.map(process_city, CURATED_CITIES))
 
-            # Fallback to local DB query or curated baseline if OpenAQ is unreachable/none
-            if current_aqi is None:
-                station = find_nearest_station(city["latitude"], city["longitude"])
-                current_aqi = city["current_aqi"]
-                if station:
-                    latest_aqi = fetch_latest_aqi_for_station(station["id"])
-                    if latest_aqi is not None and latest_aqi >= 100.0:
-                        current_aqi = latest_aqi
-
-            # Scale projected AQI proportionally to represent a reasonable target
-            scale = current_aqi / city["current_aqi"]
-            projected_aqi = round(city["projected_aqi"] * scale, 1)
-            reduction_pct = (
-                round(((current_aqi - projected_aqi) / current_aqi) * 100, 2)
-                if current_aqi > 0
-                else 0.0
-            )
-            health_benefit = round(city["health_benefit"] * scale, 1)
-
-            reports.append(
-                CityComparisonReport(
-                    city_name=city["city_name"],
-                    latitude=city["latitude"],
-                    longitude=city["longitude"],
-                    current_aqi=round(current_aqi, 1),
-                    primary_cause=city["primary_cause"],
-                    projected_aqi=projected_aqi,
-                    reduction_pct=reduction_pct,
-                    health_benefit=health_benefit,
-                    status_level=(
-                        "high"
-                        if current_aqi > 200.0
-                        else "medium" if current_aqi > 100.0 else "low"
-                    ),
-                    optimal_actions=city["optimal_actions"],
-                )
-            )
-
-        return MultiCityResponse(cities=reports)
+        response_data = MultiCityResponse(cities=reports)
+        # Cache for 10 minutes (600s)
+        set_cached_value(cache_key, response_data.model_dump_json(), ttl_seconds=600)
+        return response_data
 
     except Exception as e:
         logger.error("API: Multi-city comparison endpoint failed", exc_info=True)
