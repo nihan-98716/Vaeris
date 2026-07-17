@@ -400,12 +400,7 @@ function App() {
       <header className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img src="/logo.png" alt="Vaeris Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
-          <div>
-            <h1 style={{ fontFamily: 'var(--font-family-display)', fontSize: '20px', fontWeight: '800', tracking: 'wide', background: 'linear-gradient(90deg, #00f0ff, #fff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              VAERIS
-            </h1>
-            <p style={{ fontSize: '10px', color: 'var(--text-muted)', tracking: 'widest' }}>URBAN AIR QUALITY COMMAND CENTER</p>
-          </div>
+          <img src="/name.png" alt="Vaeris Name" style={{ height: '24px', width: 'auto', objectFit: 'contain' }} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
