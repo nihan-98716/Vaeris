@@ -4,6 +4,7 @@ import DecisionPanel from './components/DecisionPanel';
 import BeforeAfterPanel from './components/BeforeAfterPanel';
 import ReplayTimeline from './components/ReplayTimeline';
 import CitizenAdvisoryPanel from './components/CitizenAdvisoryPanel';
+import MultiCityView from './components/MultiCityView';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -334,6 +335,7 @@ function App() {
     { id: 'replay',       label: 'NOV 13–18 REPLAY',   Icon: Clock        },
     { id: 'before-after', label: 'BEFORE / AFTER',     Icon: TrendingDown },
     { id: 'advisory',     label: 'CITIZEN ADVISORY',   Icon: ShieldCheck  },
+    { id: 'multicity',    label: 'NATIONAL GRID',      Icon: Layers       },
   ];
 
   return (
@@ -729,9 +731,19 @@ function App() {
         </section>
       )}
 
+      {/* National Grid tab */}
+      {activeTab === 'multicity' && (
+        <section
+          className="glass-panel"
+          style={{ flex: 1, minHeight: 0, padding: '20px', overflowY: 'auto' }}
+        >
+          <MultiCityView apiBase={API_BASE} />
+        </section>
+      )}
+
       {/* 3. Footer / Operations status */}
       <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-dark)' }}>
-        <span>VAERIS OPERATIONAL SUITE v0.1.0-MVP · Phase 9</span>
+        <span>VAERIS OPERATIONAL SUITE v0.1.0-MVP · Phase 10</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <Clock size={10} /> Delhi Local Time: {new Date().toLocaleTimeString()} (UTC+5:30)
         </span>
