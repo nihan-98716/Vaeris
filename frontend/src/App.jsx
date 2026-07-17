@@ -125,7 +125,7 @@ function App() {
 
         // Fallback/Mock data if offline or API failed
         if (!forecastData || !attributionData) {
-          await new Promise(resolve => setTimeout(resolve, 800)); // simulate network delay
+          await new Promise(resolve => setTimeout(resolve, 50)); // simulate minimal network delay
           
           // Generate mock parameters relative to selected coordinates
           const baseAqi = selectedStation ? selectedStation.aqi : 160;
@@ -180,7 +180,7 @@ function App() {
     return () => {
       isMounted = false;
     };
-  }, [selectedCoord, apiConnected, selectedStation]);
+  }, [selectedCoord, selectedStation]);
 
   // Initialize MapLibre GL Map
   useEffect(() => {
