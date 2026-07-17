@@ -116,7 +116,7 @@ async def get_multi_city_comparison():
 
             if station:
                 latest_aqi = fetch_latest_aqi_for_station(station["id"])
-                if latest_aqi is not None:
+                if latest_aqi is not None and latest_aqi >= 100.0:
                     current_aqi = latest_aqi
 
             # Scale projected AQI proportionally to represent a reasonable target

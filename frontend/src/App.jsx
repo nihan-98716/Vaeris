@@ -64,6 +64,7 @@ function App() {
   // Phase 7: tab navigation
   const [activeTab, setActiveTab] = useState('live'); // 'live' | 'replay' | 'before-after'
   const [liveTime, setLiveTime] = useState(new Date());
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -88,7 +89,7 @@ function App() {
   }, [activeTab]);
   // Highlight selected station marker and dim surrounding ones
   useEffect(() => {
-    if (!selectedStation) return;
+    if (!mapLoaded || !selectedStation) return;
     REPRESENTATIVE_STATIONS.forEach((s) => {
       const el = document.getElementById(`marker-${s.id}`);
       if (el) {
@@ -109,7 +110,7 @@ function App() {
         }
       }
     });
-  }, [selectedStation]);
+  }, [selectedStation, mapLoaded]);
 
   // Check API health on mount
   useEffect(() => {
@@ -265,33 +266,44 @@ function App() {
 
     // Draw representative station markers
     REPRESENTATIVE_STATIONS.forEach((s) => {
-      // Create HTML element for custom marker design
+      // Create HTML element for custom marker design wrapper (MapLibre controls this element's position transform)
       const el = document.createElement('div');
-      el.className = 'station-marker';
-      el.id = `marker-${s.id}`;
-      el.style.width = '20px';
-      el.style.height = '20px';
-      el.style.borderRadius = '50%';
+      el.className = 'station-marker-wrapper';
+      el.style.width = '24px';
+      el.style.height = '24px';
       el.style.display = 'flex';
       el.style.alignItems = 'center';
       el.style.justifyContent = 'center';
-      el.style.cursor = 'pointer';
-      el.style.transition = 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+
+      // Create inner marker circle (we control scale/glow on this elements style)
+      const inner = document.createElement('div');
+      inner.className = 'station-marker-inner';
+      inner.id = `marker-${s.id}`;
+      inner.style.width = '20px';
+      inner.style.height = '20px';
+      inner.style.borderRadius = '50%';
+      inner.style.display = 'flex';
+      inner.style.alignItems = 'center';
+      inner.style.justifyContent = 'center';
+      inner.style.cursor = 'pointer';
+      inner.style.transition = 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
       
       // Color coding based on AQI severity
       const color = s.aqi > 200 ? 'var(--aqi-severe)' : s.aqi > 150 ? 'var(--aqi-poor)' : 'var(--aqi-satisfactory)';
-      el.style.background = color;
-      el.style.border = '1px solid rgba(255, 255, 255, 0.8)';
+      inner.style.background = color;
+      inner.style.border = '1px solid rgba(255, 255, 255, 0.8)';
       
       // Label inner HTML
-      el.innerHTML = `<span style="font-size: 8px; font-weight: bold; color: #fff; font-family: var(--font-mono);">${s.aqi}</span>`;
+      inner.innerHTML = `<span style="font-size: 8px; font-weight: bold; color: #fff; font-family: var(--font-mono);">${s.aqi}</span>`;
       
       // Setup click handler
-      el.addEventListener('click', (e) => {
+      inner.addEventListener('click', (e) => {
         e.stopPropagation();
         setSelectedCoord({ lat: s.lat, lon: s.lon });
         setSelectedStation(s);
       });
+
+      el.appendChild(inner);
 
       // Add to map
       const marker = new maplibregl.Marker(el)
@@ -308,7 +320,10 @@ function App() {
       markersRef.current.push(marker);
     });
 
+    setMapLoaded(true);
+
     return () => {
+      setMapLoaded(false);
       if (map.current) {
         map.current.remove();
         map.current = null;
