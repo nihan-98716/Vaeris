@@ -820,7 +820,7 @@ function App() {
 
       {/* 3. Footer / Operations status */}
       <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-dark)' }}>
-        <span>VAERIS OPERATIONAL SUITE v0.1.0-MVP · Phase 10</span>
+        <span></span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <Clock size={10} /> Delhi Local Time: {liveTime.toLocaleTimeString()} (UTC+5:30)
         </span>
