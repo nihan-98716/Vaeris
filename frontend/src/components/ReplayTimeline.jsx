@@ -43,22 +43,28 @@ import {
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
-const STATION_COLORS = ['#00f0ff', '#a855f7', '#f59e0b', '#10b981', '#f43f5e'];
+const STATION_COLORS = [
+  'var(--accent)',
+  'var(--accent-dim)',
+  'var(--aqi-poor)',
+  'var(--aqi-satisfactory)',
+  'var(--aqi-severe)'
+];
 const STATION_NAMES  = ['Anand Vihar', 'Narela', 'Bawana', 'RK Puram', 'Mandir Marg'];
 
 const KEY_EVENTS = [
-  { date: 'Nov 14', label: 'GRAP-III Invoked',   color: '#ef4444' },
-  { date: 'Nov 16', label: 'NW Wind Shift',       color: '#a855f7' },
-  { date: 'Nov 18', label: 'Peak AQI 491 ⚠',    color: '#dc2626' },
+  { date: 'Nov 14', label: 'GRAP-III Invoked',   color: 'var(--aqi-poor)' },
+  { date: 'Nov 16', label: 'NW Wind Shift',       color: 'var(--accent)' },
+  { date: 'Nov 18', label: 'Peak AQI 491 ⚠',    color: 'var(--aqi-severe)' },
 ];
 
 function getAqiColor(aqi) {
-  if (aqi <= 50)  return '#10b981';
-  if (aqi <= 100) return '#84cc16';
-  if (aqi <= 200) return '#f59e0b';
-  if (aqi <= 300) return '#f97316';
-  if (aqi <= 400) return '#ef4444';
-  return '#dc2626';
+  if (aqi <= 50)  return 'var(--aqi-good)';
+  if (aqi <= 100) return 'var(--aqi-satisfactory)';
+  if (aqi <= 200) return 'var(--aqi-moderate)';
+  if (aqi <= 300) return 'var(--aqi-poor)';
+  if (aqi <= 400) return 'var(--aqi-very-poor)';
+  return 'var(--aqi-severe)';
 }
 
 // ─── Custom Tooltip ─────────────────────────────────────────────────────────────

@@ -89,12 +89,12 @@ const LOCAL_CITIES_DATA = [
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getAqiStyle(aqi) {
-  if (aqi <= 50)  return { label: 'Good',          color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' };
-  if (aqi <= 100) return { label: 'Satisfactory',  color: '#84cc16', bg: 'rgba(132, 204, 22, 0.12)' };
-  if (aqi <= 200) return { label: 'Moderate',      color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' };
-  if (aqi <= 300) return { label: 'Poor',          color: '#f97316', bg: 'rgba(249, 115, 22, 0.12)' };
-  if (aqi <= 400) return { label: 'Very Poor',     color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' };
-  return { label: 'Severe', color: '#dc2626', bg: 'rgba(220, 38, 38, 0.18)' };
+  if (aqi <= 50)  return { label: 'Good',          color: 'var(--aqi-good)', bg: 'rgba(110, 231, 168, 0.08)' };
+  if (aqi <= 100) return { label: 'Satisfactory',  color: 'var(--aqi-satisfactory)', bg: 'rgba(168, 217, 110, 0.08)' };
+  if (aqi <= 200) return { label: 'Moderate',      color: 'var(--aqi-moderate)', bg: 'rgba(232, 210, 110, 0.08)' };
+  if (aqi <= 300) return { label: 'Poor',          color: 'var(--aqi-poor)', bg: 'rgba(232, 168, 79, 0.08)' };
+  if (aqi <= 400) return { label: 'Very Poor',     color: 'var(--aqi-very-poor)', bg: 'rgba(232, 101, 79, 0.08)' };
+  return { label: 'Severe', color: 'var(--aqi-severe)', bg: 'rgba(122, 46, 61, 0.12)' };
 }
 
 function getSourceIcon(source) {

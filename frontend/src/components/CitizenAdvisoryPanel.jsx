@@ -146,12 +146,12 @@ const LOCAL_SOURCE_PRECAUTIONS = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getAqiStyle(aqi) {
-  if (aqi <= 50)  return { label_en: 'Good',          label_hi: 'अच्छा',              color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' };
-  if (aqi <= 100) return { label_en: 'Satisfactory',  label_hi: 'संतोषजनक',           color: '#84cc16', bg: 'rgba(132, 204, 22, 0.15)' };
-  if (aqi <= 200) return { label_en: 'Moderate',      label_hi: 'सामान्य रूप से प्रदूषित', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' };
-  if (aqi <= 300) return { label_en: 'Poor',          label_hi: 'खराब',               color: '#f97316', bg: 'rgba(249, 115, 22, 0.15)' };
-  if (aqi <= 400) return { label_en: 'Very Poor',     label_hi: 'बहुत खराब',           color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' };
-  return { label_en: 'Severe', label_hi: 'गंभीर', color: '#dc2626', bg: 'rgba(220, 38, 38, 0.2)' };
+  if (aqi <= 50)  return { label_en: 'Good',          label_hi: 'अच्छा',              color: 'var(--aqi-good)', bg: 'rgba(110, 231, 168, 0.08)' };
+  if (aqi <= 100) return { label_en: 'Satisfactory',  label_hi: 'संतोषजनक',           color: 'var(--aqi-satisfactory)', bg: 'rgba(168, 217, 110, 0.08)' };
+  if (aqi <= 200) return { label_en: 'Moderate',      label_hi: 'सामान्य रूप से प्रदूषित', color: 'var(--aqi-moderate)', bg: 'rgba(232, 210, 110, 0.08)' };
+  if (aqi <= 300) return { label_en: 'Poor',          label_hi: 'खराब',               color: 'var(--aqi-poor)', bg: 'rgba(232, 168, 79, 0.08)' };
+  if (aqi <= 400) return { label_en: 'Very Poor',     label_hi: 'बहुत खराब',           color: 'var(--aqi-very-poor)', bg: 'rgba(232, 101, 79, 0.08)' };
+  return { label_en: 'Severe', label_hi: 'गंभीर', color: 'var(--aqi-severe)', bg: 'rgba(122, 46, 61, 0.12)' };
 }
 
 export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecastAqi, apiBase }) {
