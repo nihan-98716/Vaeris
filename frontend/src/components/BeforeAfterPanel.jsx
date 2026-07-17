@@ -16,7 +16,7 @@
 import { useState, useEffect } from 'react';
 import {
   ArrowDown,
-  TrendingDown,
+  TrendingUp,
   Target,
   Users,
   DollarSign,
@@ -256,7 +256,7 @@ export default function BeforeAfterPanel({ currentAqi, primaryCause, apiBase }) 
             borderRadius: 8, padding: '10px 14px',
           }}
         >
-          <TrendingDown size={18} color="#10b981" style={{ flexShrink: 0 }} />
+          <TrendingUp size={18} color="#10b981" style={{ flexShrink: 0 }} />
           <div>
             <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600 }}>
               INDICATIVE HEALTH BENEFIT

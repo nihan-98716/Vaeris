@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, Users, DollarSign, Timer, AlertTriangle, Cpu, Heart } from 'lucide-react';
+import { Users, DollarSign, Timer, AlertTriangle, Cpu, Heart } from 'lucide-react';
 
-export default function DecisionPanel({ baselineAqi = 245, apiBase = "http://localhost:8000" }) {
+export default function DecisionPanel({ baselineAqi = 245, apiBase = "" }) {
   const [budget, setBudget] = useState(4000);
   const [inspectors, setInspectors] = useState(6);
   const [maxTravelTime, setMaxTravelTime] = useState(3.0);
@@ -186,40 +186,52 @@ export default function DecisionPanel({ baselineAqi = 245, apiBase = "http://loc
 
       {/* Before / After Projection Panel */}
       {results && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '12px', background: 'rgba(0, 240, 255, 0.02)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(63, 208, 224, 0.02)', border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-md)', padding: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '9px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', letterSpacing: '0.04em' }}>PROJECTED AQI ANALYSIS</span>
+            {results.selected_interventions.length > 0 && (
+              <span style={{ fontSize: 'var(--text-h2)', fontWeight: '700', fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}>
+                −{results.total_aqi_reduction}
+              </span>
+            )}
+          </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '600' }}>EXPECTED IMPACT SCENARIO</span>
-            <div style={{ fontSize: '20px', fontWeight: '800', fontFamily: 'var(--font-family-display)' }}>
-              {results.selected_interventions.length > 0 ? (
-                <span style={{ color: 'var(--color-success)' }}>
-                  -{results.total_aqi_reduction} AQI Points
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', margin: '4px 0' }}>
+            {/* Before */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <span style={{ fontSize: '8px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', fontFamily: 'var(--font-ui)' }}>PROJECTED AQI</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '1px',
+                  background: baselineAqi > 200 ? 'var(--aqi-severe)' : baselineAqi > 150 ? 'var(--aqi-poor)' : 'var(--aqi-satisfactory)'
+                }} />
+                <span style={{ fontSize: 'var(--text-h1)', fontWeight: '800', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                  {baselineAqi}
                 </span>
-              ) : (
-                <span style={{ color: 'var(--text-muted)' }}>No Action Taken</span>
-              )}
+              </div>
             </div>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ShieldCheck size={10} color="var(--color-success)" />
-              <span>Projected optimization results</span>
+
+            {/* Arrow */}
+            <span style={{ fontSize: 'var(--text-h1)', color: 'var(--border-strong)', fontFamily: 'var(--font-mono)' }}>➔</span>
+
+            {/* After */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <span style={{ fontSize: '8px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', fontFamily: 'var(--font-ui)' }}>PROJECTED AQI</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                <span style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '1px',
+                  background: projectedAqi > 200 ? 'var(--aqi-severe)' : projectedAqi > 150 ? 'var(--aqi-poor)' : 'var(--aqi-satisfactory)'
+                }} />
+                <span style={{ fontSize: 'var(--text-h1)', fontWeight: '800', fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}>
+                  {projectedAqi}
+                </span>
+              </div>
             </div>
           </div>
-
-          <div style={{ borderLeft: '1px solid var(--border-light)', paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)' }}>
-              <span>Without Intervention:</span>
-              <span style={{ fontWeight: '700', color: 'var(--text-main)' }}>{baselineAqi} (Projected AQI)</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)' }}>
-              <span>With Recommendation:</span>
-              <span style={{ fontWeight: '700', color: 'var(--color-success)' }}>{projectedAqi} (Projected AQI)</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '4px', marginTop: '2px' }}>
-              <span>Expected Reduction:</span>
-              <span style={{ fontWeight: '800', color: 'var(--color-primary)' }}>{results.total_aqi_reduction} points</span>
-            </div>
-          </div>
-
         </div>
       )}
 

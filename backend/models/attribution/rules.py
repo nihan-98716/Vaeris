@@ -68,8 +68,11 @@ def fire_attribution_rule(signals: dict) -> RuleResult:
     wind_direction_deg = signals.get("wind_direction_deg")
     wind_speed_ms = signals.get("wind_speed_ms", 0.0)
     aqi_spike = signals.get("aqi_now", 0.0) - signals.get("aqi_rolling_mean_24h", 0.0)
+    aqi_high_or_spike = (aqi_spike >= AQI_SPIKE_THRESHOLD) or (
+        signals.get("aqi_now", 0.0) >= 100.0
+    )
 
-    if not fire_events or wind_direction_deg is None or aqi_spike < AQI_SPIKE_THRESHOLD:
+    if not fire_events or wind_direction_deg is None or not aqi_high_or_spike:
         return RuleResult(source="agricultural_burning", strength=0.0, evidence=[])
 
     best_strength = 0.0
@@ -134,11 +137,11 @@ def traffic_attribution_rule(signals: dict) -> RuleResult:
     road_density = signals.get("road_density_500m", 0.0)
     hour_of_day = signals.get("hour_of_day")
     aqi_spike = signals.get("aqi_now", 0.0) - signals.get("aqi_rolling_mean_24h", 0.0)
+    aqi_high_or_spike = (aqi_spike >= AQI_SPIKE_THRESHOLD) or (
+        signals.get("aqi_now", 0.0) >= 100.0
+    )
 
-    if (
-        road_density < ROAD_DENSITY_HIGH_TRAFFIC_THRESHOLD
-        or aqi_spike < AQI_SPIKE_THRESHOLD
-    ):
+    if road_density < ROAD_DENSITY_HIGH_TRAFFIC_THRESHOLD or not aqi_high_or_spike:
         return RuleResult(source="traffic", strength=0.0, evidence=[])
 
     is_commute_hour = hour_of_day is not None and (
@@ -170,8 +173,11 @@ def industrial_attribution_rule(signals: dict) -> RuleResult:
     land_use = signals.get("land_use_category")
     hour_of_day = signals.get("hour_of_day")
     aqi_spike = signals.get("aqi_now", 0.0) - signals.get("aqi_rolling_mean_24h", 0.0)
+    aqi_high_or_spike = (aqi_spike >= AQI_SPIKE_THRESHOLD) or (
+        signals.get("aqi_now", 0.0) >= 100.0
+    )
 
-    if land_use != "industrial" or aqi_spike < AQI_SPIKE_THRESHOLD:
+    if land_use != "industrial" or not aqi_high_or_spike:
         return RuleResult(source="industrial", strength=0.0, evidence=[])
 
     is_commute_hour = hour_of_day is not None and (

@@ -3,29 +3,64 @@
 */
 
 :root {
-  --bg-color: #060a13;
-  --bg-panel: rgba(13, 20, 38, 0.65);
-  --bg-panel-hover: rgba(20, 30, 55, 0.8);
-  --border-light: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(0, 240, 255, 0.3);
-  
-  /* HSL tailored color palette */
-  --color-primary: #00f0ff; /* Electric Cyan */
-  --color-secondary: #a855f7; /* Violet */
-  --color-success: #10b981; /* Emerald */
-  --color-warning: #f59e0b; /* Amber */
-  --color-danger: #ef4444; /* Rose Red */
-  
-  --text-main: #f3f4f6;
-  --text-muted: #9ca3af;
-  --text-dark: #6b7280;
-  
-  --font-family-body: 'Inter', sans-serif;
-  --font-family-display: 'Outfit', sans-serif;
-  
-  --shadow-neon: 0 0 20px rgba(0, 240, 255, 0.15);
-  --shadow-panel: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Base surfaces — cool graphite, not pure black, not warm */
+  --bg-base:        #0B0E12;   /* app background */
+  --bg-surface:     #14181F;   /* cards, panels, the right rail */
+  --bg-surface-2:   #1B2029;   /* nested/elevated surface (e.g. hover state, active tab) */
+  --border-hairline:#262B33;   /* primary structural device — 1px, everywhere */
+  --border-strong:  #363D49;   /* emphasized dividers, focused card outline */
+
+  /* Text */
+  --text-primary:   #E4E7EB;   /* soft off-white, never pure #FFFFFF */
+  --text-secondary: #8A93A1;
+  --text-tertiary:  #565E6B;   /* timestamps, units, de-emphasized labels */
+
+  /* UI accent — cold cyan, reserved for interactivity/live state ONLY */
+  --accent:         #3FD0E0;
+  --accent-dim:     #2A8E99;   /* accent at rest / secondary emphasis */
+  --accent-glow:    rgba(63, 208, 224, 0.15); /* focus rings, subtle active-state backgrounds */
+
+  /* AQI data scale (CPCB categories; data encoding only, never UI chrome) */
+  --aqi-good:        #6EE7A8;
+  --aqi-satisfactory:#A8D96E;
+  --aqi-moderate:    #E8D26E;
+  --aqi-poor:        #E8A84F;
+  --aqi-very-poor:   #E8654F;
+  --aqi-severe:      #7A2E3D;  /* deep maroon, matches CPCB's own "Severe" convention */
+
+  /* Typography */
+  --font-ui:   'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
+
+  /* Type scale */
+  --text-display: 2.5rem;   /* the one big number on screen at a time, e.g. current AQI */
+  --text-h1:      1.5rem;
+  --text-h2:      1.125rem;
+  --text-body:    0.9375rem;
+  --text-small:   0.8125rem;
+  --text-micro:   0.6875rem;  /* uppercase labels, letter-spacing 0.06em */
+
+  /* Spacing, radius, elevation */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+
+  /* Compatibility with existing CSS variables */
+  --bg-color: var(--bg-base);
+  --bg-panel: var(--bg-surface);
+  --bg-panel-hover: var(--bg-surface-2);
+  --border-light: var(--border-hairline);
+  --border-active: var(--border-strong);
+  --color-primary: var(--accent);
+  --color-secondary: var(--accent-dim);
+  --color-success: var(--aqi-good);
+  --color-warning: var(--aqi-poor);
+  --color-danger: var(--aqi-very-poor);
+  --text-main: var(--text-primary);
+  --text-muted: var(--text-secondary);
+  --text-dark: var(--text-tertiary);
+  --font-family-body: var(--font-ui);
+  --font-family-display: var(--font-mono);
+  --transition-smooth: all 0.12s ease-out;
 }
 
 * {
@@ -35,12 +70,12 @@
 }
 
 body {
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  font-family: var(--font-family-body);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  overflow: hidden;
   height: 100vh;
 }
 
@@ -50,42 +85,40 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.01);
+  background: var(--bg-base);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: var(--border-hairline);
+  border-radius: var(--radius-sm);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.3);
+  background: var(--border-strong);
 }
 
-/* Glassmorphism Styles */
+/* Console Glassmorphism Styles */
 .glass-panel {
-  background: var(--bg-panel);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  box-shadow: var(--shadow-panel);
-  transition: var(--transition-smooth);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  transition: border-color 0.12s ease-out;
 }
 
 .glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--border-strong);
 }
 
 /* Shimmer Loading Skeleton */
 .shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.03) 25%,
-    rgba(255, 255, 255, 0.08) 50%,
-    rgba(255, 255, 255, 0.03) 75%
+    rgba(255, 255, 255, 0.02) 25%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.02) 75%
   );
   background-size: 200% 100%;
   animation: loading-shimmer 1.5s infinite;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 @keyframes loading-shimmer {
@@ -97,20 +130,22 @@ body {
   }
 }
 
-/* Pulse animation for active monitoring indicators */
-.pulse-glow {
-  box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7);
-  animation: pulse-ring 2s infinite;
+/* Live indicators animation */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 
-@keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(0, 240, 255, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(0, 240, 255, 0);
-  }
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: live-pulse 2.4s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; opacity: 1; }
+  * { transition-duration: 0.01ms !important; }
 }

@@ -2,9 +2,10 @@
 backend/decision/optimizer.py
 
 Predefines the catalog of possible interventions for Delhi's air quality crisis and
-implements the constrained greedy knapsack solver to optimize selection.
+implements an exact constrained knapsack solver to optimize selection.
 """
 
+from itertools import combinations
 from typing import Any, Dict, List
 
 from backend.decision.health_impact import calculate_health_benefit
@@ -80,7 +81,9 @@ def optimize_interventions(
     budget: float, inspectors: int, max_travel_time_hours: float
 ) -> Dict[str, Any]:
     """
-    Optimizes the selection of interventions from the catalog using a greedy approach.
+    Optimizes the selection of interventions from the catalog by exhaustively
+    evaluating feasible subsets. The intervention catalog is intentionally small,
+    so exact search keeps recommendations faithful to the weighted objective.
 
     Constraints:
     - Total cost of selected interventions <= budget
@@ -123,44 +126,57 @@ def optimize_interventions(
     for i in normalized:
         i["score"] = calculate_objective_score(i, weights)
 
-    # 5. Greedy Selection: Sort by score descending
-    # (Optional refinement: sort by score per unit cost. Raw score is the standard greedy approach here)
-    sorted_candidates = sorted(normalized, key=lambda x: x["score"], reverse=True)
+    # 5. Exact constrained selection. Tie-breakers keep output deterministic
+    # while preferring higher direct impact, then lower cost, then fewer inspectors.
+    best_combo = ()
+    best_key = (0.0, 0.0, -0.0, 0, ())
+    for size in range(1, len(normalized) + 1):
+        for combo in combinations(normalized, size):
+            total_cost = sum(item["cost"] for item in combo)
+            total_inspectors = sum(item["inspectors_required"] for item in combo)
+            if total_cost > budget or total_inspectors > inspectors:
+                continue
 
-    selected = []
-    current_cost = 0.0
-    current_inspectors = 0
-    total_aqi_reduction = 0.0
-    total_population_affected = 0
-    total_health_benefit = 0.0
+            total_score = sum(item["score"] for item in combo)
+            total_aqi = sum(item["aqi_reduction"] for item in combo)
+            ids = tuple(sorted(item["id"] for item in combo))
+            key = (
+                round(total_score, 12),
+                round(total_aqi, 12),
+                -round(total_cost, 12),
+                -total_inspectors,
+                ids,
+            )
+            if key > best_key:
+                best_key = key
+                best_combo = combo
 
-    for candidate in sorted_candidates:
-        cost = candidate["cost"]
-        req_inspectors = candidate["inspectors_required"]
+    selected_candidates = sorted(
+        best_combo,
+        key=lambda x: (x["score"], x["aqi_reduction"], -x["cost"], x["id"]),
+        reverse=True,
+    )
+    selected = [
+        {
+            "id": candidate["id"],
+            "name": candidate["name"],
+            "description": candidate["description"],
+            "cost": candidate["cost"],
+            "inspectors_required": candidate["inspectors_required"],
+            "travel_time_hours": candidate["travel_time_hours"],
+            "aqi_reduction": candidate["aqi_reduction"],
+            "population_affected": candidate["population_affected"],
+            "health_benefit": candidate["health_benefit"],
+            "score": candidate["score"],
+        }
+        for candidate in selected_candidates
+    ]
 
-        # Check resource constraints
-        if (current_cost + cost <= budget) and (
-            current_inspectors + req_inspectors <= inspectors
-        ):
-            # Select intervention (clean up internal normalized variables)
-            clean_item = {
-                "id": candidate["id"],
-                "name": candidate["name"],
-                "description": candidate["description"],
-                "cost": candidate["cost"],
-                "inspectors_required": candidate["inspectors_required"],
-                "travel_time_hours": candidate["travel_time_hours"],
-                "aqi_reduction": candidate["aqi_reduction"],
-                "population_affected": candidate["population_affected"],
-                "health_benefit": candidate["health_benefit"],
-                "score": candidate["score"],
-            }
-            selected.append(clean_item)
-            current_cost += cost
-            current_inspectors += req_inspectors
-            total_aqi_reduction += candidate["aqi_reduction"]
-            total_population_affected += candidate["population_affected"]
-            total_health_benefit += candidate["health_benefit"]
+    current_cost = sum(item["cost"] for item in selected)
+    current_inspectors = sum(item["inspectors_required"] for item in selected)
+    total_aqi_reduction = sum(item["aqi_reduction"] for item in selected)
+    total_population_affected = sum(item["population_affected"] for item in selected)
+    total_health_benefit = sum(item["health_benefit"] for item in selected)
 
     return {
         "selected_interventions": selected,

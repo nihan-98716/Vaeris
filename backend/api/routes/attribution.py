@@ -108,6 +108,27 @@ def _extract_fire_events_for_attribution(
     return fire_events
 
 
+def _find_closest_representative_station(lat: float, lon: float) -> str:
+    """
+    Finds the closest representative offline station ID based on coordinates.
+    """
+    stations = {
+        "DL001": (28.6476, 77.3158),
+        "DL002": (28.8228, 77.0943),
+        "DL003": (28.7972, 77.0589),
+        "DL004": (28.5660, 77.1866),
+        "DL005": (28.6364, 77.2010),
+    }
+    best_id = "DL001"
+    best_dist = float("inf")
+    for s_id, (s_lat, s_lon) in stations.items():
+        dist = queries.haversine_distance(lat, lon, s_lat, s_lon)
+        if dist < best_dist:
+            best_dist = dist
+            best_id = s_id
+    return best_id
+
+
 def gather_attribution_signals(location: LatLon) -> tuple[dict, list[str]]:
     """
     Queries history and active environmental readings for a coordinate,
@@ -122,12 +143,14 @@ def gather_attribution_signals(location: LatLon) -> tuple[dict, list[str]]:
     else:
         history_df = pd.DataFrame()
 
-    if history_df.empty:
-        # Fallback to offline Delhi snapshot
-        logger.info("Attribution: Using offline snapshot history fallback.")
-        fallback_station = "DL001"
-        if station and station["id"] in ["DL001", "DL002", "DL003", "DL004", "DL005"]:
-            fallback_station = station["id"]
+    # If database history is missing or insufficient (e.g., single row), fallback to offline snapshot
+    if len(history_df) < 10:
+        logger.info(
+            "Attribution: Insufficient database history. Using offline snapshot history fallback."
+        )
+        fallback_station = _find_closest_representative_station(
+            location.latitude, location.longitude
+        )
         history_df = queries.get_offline_snapshot_history(
             fallback_station, limit_hours=48
         )

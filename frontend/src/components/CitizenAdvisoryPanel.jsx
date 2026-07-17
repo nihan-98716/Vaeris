@@ -146,12 +146,12 @@ const LOCAL_SOURCE_PRECAUTIONS = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getAqiStyle(aqi) {
-  if (aqi <= 50)  return { label_en: 'Good',          label_hi: 'अच्छा',              color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' };
-  if (aqi <= 100) return { label_en: 'Satisfactory',  label_hi: 'संतोषजनक',           color: '#84cc16', bg: 'rgba(132, 204, 22, 0.15)' };
-  if (aqi <= 200) return { label_en: 'Moderate',      label_hi: 'सामान्य रूप से प्रदूषित', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' };
-  if (aqi <= 300) return { label_en: 'Poor',          label_hi: 'खराब',               color: '#f97316', bg: 'rgba(249, 115, 22, 0.15)' };
-  if (aqi <= 400) return { label_en: 'Very Poor',     label_hi: 'बहुत खराब',           color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' };
-  return { label_en: 'Severe', label_hi: 'गंभीर', color: '#dc2626', bg: 'rgba(220, 38, 38, 0.2)' };
+  if (aqi <= 50)  return { label_en: 'Good',          label_hi: 'अच्छा',              color: 'var(--aqi-good)', bg: 'rgba(110, 231, 168, 0.08)' };
+  if (aqi <= 100) return { label_en: 'Satisfactory',  label_hi: 'संतोषजनक',           color: 'var(--aqi-satisfactory)', bg: 'rgba(168, 217, 110, 0.08)' };
+  if (aqi <= 200) return { label_en: 'Moderate',      label_hi: 'सामान्य रूप से प्रदूषित', color: 'var(--aqi-moderate)', bg: 'rgba(232, 210, 110, 0.08)' };
+  if (aqi <= 300) return { label_en: 'Poor',          label_hi: 'खराब',               color: 'var(--aqi-poor)', bg: 'rgba(232, 168, 79, 0.08)' };
+  if (aqi <= 400) return { label_en: 'Very Poor',     label_hi: 'बहुत खराब',           color: 'var(--aqi-very-poor)', bg: 'rgba(232, 101, 79, 0.08)' };
+  return { label_en: 'Severe', label_hi: 'गंभीर', color: 'var(--aqi-severe)', bg: 'rgba(122, 46, 61, 0.12)' };
 }
 
 export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecastAqi, apiBase }) {
@@ -159,6 +159,7 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
   const [advisory, setAdvisory] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [isLlm, setIsLlm]       = useState(false);
+  const [enableLlm, setEnableLlm] = useState(false); // default to false for instant local mode
 
   const baselineAqi = Math.round(currentAqi || 300);
   const forecastVal = forecastAqi ? Math.round(forecastAqi) : null;
@@ -177,7 +178,7 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
           (forecastVal ? `&forecasted_aqi=${forecastVal}` : '') +
           `&primary_cause=${source}` +
           `&language=${language}` +
-          `&enable_llm=true`;
+          `&enable_llm=${enableLlm}`;
 
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
@@ -232,7 +233,7 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
     return () => {
       isMounted = false;
     };
-  }, [baselineAqi, forecastVal, source, language, apiBase]);
+  }, [baselineAqi, forecastVal, source, language, enableLlm, apiBase]);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' }}>
@@ -332,6 +333,41 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
             }}
           >
             हिंदी / HINDI
+          </button>
+        </div>
+
+        {/* AI Generator Toggle */}
+        <div className="glass-panel" style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '8px' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Sparkles size={12} color={enableLlm ? 'var(--color-success)' : 'var(--text-dark)'} />
+            <span style={{ fontWeight: 600 }}>AI ADVISORY (LLM)</span>
+          </span>
+          <button
+            onClick={() => setEnableLlm(!enableLlm)}
+            style={{
+              background: enableLlm ? 'var(--color-success)' : 'rgba(255,255,255,0.06)',
+              border: 'none',
+              borderRadius: '20px',
+              width: '36px',
+              height: '18px',
+              position: 'relative',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                background: '#fff',
+                position: 'absolute',
+                left: enableLlm ? '20px' : '4px',
+                transition: 'left 0.2s',
+              }}
+            />
           </button>
         </div>
       </div>

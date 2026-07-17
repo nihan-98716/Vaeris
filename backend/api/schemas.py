@@ -316,3 +316,38 @@ class AdvisoryResponse(BaseModel):
         default=False,
         description="True if LLM generation failed/timed out, falling back to deterministic template",
     )
+
+
+class CityComparisonReport(BaseModel):
+    """
+    Comparison metrics summary for a specific city.
+    """
+
+    city_name: str = Field(..., description="Name of the city")
+    latitude: float = Field(..., description="Latitude coordinate")
+    longitude: float = Field(..., description="Longitude coordinate")
+    current_aqi: float = Field(..., description="Current measured AQI value")
+    primary_cause: str = Field(
+        ..., description="Attributed primary cause of pollution spike"
+    )
+    projected_aqi: float = Field(..., description="Projected AQI after optimization")
+    reduction_pct: float = Field(..., description="Percentage of AQI reduction")
+    health_benefit: float = Field(
+        ..., description="Indicative Respiratory Risk Reduction"
+    )
+    status_level: str = Field(
+        ..., description="Attribution confidence status level (high/medium/low)"
+    )
+    optimal_actions: List[str] = Field(
+        ..., description="Top recommended intervention actions"
+    )
+
+
+class MultiCityResponse(BaseModel):
+    """
+    List of comparison reports across multiple target cities.
+    """
+
+    cities: List[CityComparisonReport] = Field(
+        ..., description="Curated list of city comparison reports"
+    )

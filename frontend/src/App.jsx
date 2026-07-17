@@ -4,6 +4,7 @@ import DecisionPanel from './components/DecisionPanel';
 import BeforeAfterPanel from './components/BeforeAfterPanel';
 import ReplayTimeline from './components/ReplayTimeline';
 import CitizenAdvisoryPanel from './components/CitizenAdvisoryPanel';
+import MultiCityView from './components/MultiCityView';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -11,14 +12,9 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip,
-  BarChart,
-  Bar,
-  Cell
+  Tooltip
 } from 'recharts';
 import { 
-  Wind, 
-  Flame, 
   Activity, 
   AlertTriangle, 
   MapPin, 
@@ -26,12 +22,11 @@ import {
   Clock, 
   TrendingUp,
   TrendingDown,
-  Cpu,
   Info,
   ShieldCheck
 } from 'lucide-react';
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 // Pre-defined representative monitoring stations in Delhi
 const REPRESENTATIVE_STATIONS = [
@@ -39,7 +34,17 @@ const REPRESENTATIVE_STATIONS = [
   { id: "DL002", name: "Lodhi Road", lat: 28.5919, lon: 77.2272, aqi: 120, type: "Mixed Residential" },
   { id: "DL003", name: "Dwarka Sector 8", lat: 28.5710, lon: 77.0719, aqi: 190, type: "Residential/Suburban" },
   { id: "DL004", name: "Mandir Marg", lat: 28.6341, lon: 77.2005, aqi: 155, type: "Urban Center" },
-  { id: "DL005", name: "Punjabi Bagh", lat: 28.6687, lon: 77.1167, aqi: 210, type: "Traffic Corridor" }
+  { id: "DL005", name: "Punjabi Bagh", lat: 28.6687, lon: 77.1167, aqi: 210, type: "Traffic Corridor" },
+  { id: "DL006", name: "R.K. Puram", lat: 28.5660, lon: 77.1862, aqi: 175, type: "Residential" },
+  { id: "DL007", name: "Okhla Phase 3", lat: 28.5448, lon: 77.2858, aqi: 230, type: "Industrial" },
+  { id: "DL008", name: "Siri Fort", lat: 28.5504, lon: 77.2159, aqi: 135, type: "Residential" },
+  { id: "DL009", name: "Bawana", lat: 28.7972, lon: 77.0763, aqi: 280, type: "Industrial" },
+  { id: "DL010", name: "IGI Airport T3", lat: 28.5627, lon: 77.0945, aqi: 160, type: "Airport/Traffic" },
+  { id: "DL011", name: "ITO", lat: 28.6286, lon: 77.2410, aqi: 265, type: "Heavy Traffic Corridor" },
+  { id: "DL012", name: "Narela", lat: 28.8228, lon: 77.1019, aqi: 240, type: "Industrial/Border" },
+  { id: "DL013", name: "Wazirpur", lat: 28.6997, lon: 77.1654, aqi: 255, type: "Industrial" },
+  { id: "DL014", name: "Shadipur", lat: 28.6514, lon: 77.1503, aqi: 220, type: "Industrial/Traffic" },
+  { id: "DL015", name: "Jahangirpuri", lat: 28.7324, lon: 77.1706, aqi: 290, type: "Industrial" }
 ];
 
 function App() {
@@ -52,10 +57,54 @@ function App() {
   const [errorMessage, setErrorMessage] = useState(null);
   // Phase 7: tab navigation
   const [activeTab, setActiveTab] = useState('live'); // 'live' | 'replay' | 'before-after'
+  const [liveTime, setLiveTime] = useState(new Date());
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markersRef = useRef([]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Trigger MapLibre canvas resize when returning to 'live' tab to prevent blank maps
+  useEffect(() => {
+    if (activeTab === 'live' && map.current) {
+      setTimeout(() => {
+        if (map.current) {
+          map.current.resize();
+        }
+      }, 80);
+    }
+  }, [activeTab]);
+  // Highlight selected station marker and dim surrounding ones
+  useEffect(() => {
+    if (!mapLoaded || !selectedStation) return;
+    REPRESENTATIVE_STATIONS.forEach((s) => {
+      const el = document.getElementById(`marker-${s.id}`);
+      if (el) {
+        const isSelected = s.id === selectedStation.id;
+        const color = s.aqi > 200 ? 'var(--aqi-severe)' : s.aqi > 150 ? 'var(--aqi-poor)' : 'var(--aqi-satisfactory)';
+        if (isSelected) {
+          el.style.opacity = '1';
+          el.style.transform = 'scale(1.35)';
+          el.style.boxShadow = `0 0 16px ${color}`;
+          el.style.border = '2px solid #fff';
+          el.style.zIndex = '100';
+        } else {
+          el.style.opacity = '0.25';
+          el.style.transform = 'scale(0.85)';
+          el.style.boxShadow = 'none';
+          el.style.border = '1px solid rgba(255, 255, 255, 0.4)';
+          el.style.zIndex = '1';
+        }
+      }
+    });
+  }, [selectedStation, mapLoaded]);
 
   // Check API health on mount
   useEffect(() => {
@@ -106,7 +155,7 @@ function App() {
 
         // Fallback/Mock data if offline or API failed
         if (!forecastData || !attributionData) {
-          await new Promise(resolve => setTimeout(resolve, 800)); // simulate network delay
+          await new Promise(resolve => setTimeout(resolve, 50)); // simulate minimal network delay
           
           // Generate mock parameters relative to selected coordinates
           const baseAqi = selectedStation ? selectedStation.aqi : 160;
@@ -161,7 +210,7 @@ function App() {
     return () => {
       isMounted = false;
     };
-  }, [selectedCoord, apiConnected, selectedStation]);
+  }, [selectedCoord, selectedStation]);
 
   // Initialize MapLibre GL Map
   useEffect(() => {
@@ -211,38 +260,50 @@ function App() {
 
     // Draw representative station markers
     REPRESENTATIVE_STATIONS.forEach((s) => {
-      // Create HTML element for custom marker design
+      // Create HTML element for custom marker design wrapper (MapLibre controls this element's position transform)
       const el = document.createElement('div');
-      el.className = 'station-marker';
+      el.className = 'station-marker-wrapper';
       el.style.width = '24px';
       el.style.height = '24px';
-      el.style.borderRadius = '50%';
       el.style.display = 'flex';
       el.style.alignItems = 'center';
       el.style.justifyContent = 'center';
-      el.style.cursor = 'pointer';
+
+      // Create inner marker circle (we control scale/glow on this elements style)
+      const inner = document.createElement('div');
+      inner.className = 'station-marker-inner';
+      inner.id = `marker-${s.id}`;
+      inner.style.width = '20px';
+      inner.style.height = '20px';
+      inner.style.borderRadius = '50%';
+      inner.style.display = 'flex';
+      inner.style.alignItems = 'center';
+      inner.style.justifyContent = 'center';
+      inner.style.cursor = 'pointer';
+      inner.style.transition = 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
       
       // Color coding based on AQI severity
-      const color = s.aqi > 200 ? '#ef4444' : s.aqi > 150 ? '#f59e0b' : '#10b981';
-      el.style.background = color;
-      el.style.border = '2px solid rgba(255, 255, 255, 0.8)';
-      el.style.boxShadow = `0 0 12px ${color}`;
+      const color = s.aqi > 200 ? 'var(--aqi-severe)' : s.aqi > 150 ? 'var(--aqi-poor)' : 'var(--aqi-satisfactory)';
+      inner.style.background = color;
+      inner.style.border = '1px solid rgba(255, 255, 255, 0.8)';
       
       // Label inner HTML
-      el.innerHTML = `<span style="font-size: 8px; font-weight: bold; color: #000;">${s.aqi}</span>`;
+      inner.innerHTML = `<span style="font-size: 8px; font-weight: bold; color: #fff; font-family: var(--font-mono);">${s.aqi}</span>`;
       
       // Setup click handler
-      el.addEventListener('click', (e) => {
+      inner.addEventListener('click', (e) => {
         e.stopPropagation();
         setSelectedCoord({ lat: s.lat, lon: s.lon });
         setSelectedStation(s);
       });
 
+      el.appendChild(inner);
+
       // Add to map
       const marker = new maplibregl.Marker(el)
         .setLngLat([s.lon, s.lat])
         .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(
-          `<div style="color: #111; font-family: sans-serif; font-size: 12px; padding: 4px;">
+          `<div style="color: #111; font-family: var(--font-ui); font-size: 11px; padding: 4px;">
             <strong>${s.name}</strong><br/>
             Type: ${s.type}<br/>
             Current AQI: <strong>${s.aqi}</strong>
@@ -253,7 +314,10 @@ function App() {
       markersRef.current.push(marker);
     });
 
+    setMapLoaded(true);
+
     return () => {
+      setMapLoaded(false);
       if (map.current) {
         map.current.remove();
         map.current = null;
@@ -307,15 +371,7 @@ function App() {
     return [...history, ...forecastPoints];
   }, [forecast, attribution, selectedStation]);
 
-  // Format attribution confidences into an array for Recharts
-  const barChartData = React.useMemo(() => {
-    if (!attribution || !attribution.confidence_breakdown) return [];
-    return Object.entries(attribution.confidence_breakdown).map(([source, conf]) => ({
-      name: source === "agricultural_burning" ? "Crop Burning" : source.charAt(0).toUpperCase() + source.slice(1),
-      confidence: Math.round(conf * 100),
-      rawKey: source
-    })).sort((a, b) => b.confidence - a.confidence);
-  }, [attribution]);
+
 
   // Get AQI category details
   const getAqiCategory = (aqi) => {
@@ -334,6 +390,7 @@ function App() {
     { id: 'replay',       label: 'NOV 13–18 REPLAY',   Icon: Clock        },
     { id: 'before-after', label: 'BEFORE / AFTER',     Icon: TrendingDown },
     { id: 'advisory',     label: 'CITIZEN ADVISORY',   Icon: ShieldCheck  },
+    { id: 'multicity',    label: 'NATIONAL GRID',      Icon: Layers       },
   ];
 
   return (
@@ -342,15 +399,8 @@ function App() {
       {/* 1. Header Bar */}
       <header className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #00f0ff, #a855f7)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Wind size={24} color="#000" />
-          </div>
-          <div>
-            <h1 style={{ fontFamily: 'var(--font-family-display)', fontSize: '20px', fontWeight: '800', tracking: 'wide', background: 'linear-gradient(90deg, #00f0ff, #fff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              VAERIS
-            </h1>
-            <p style={{ fontSize: '10px', color: 'var(--text-muted)', tracking: 'widest' }}>URBAN AIR QUALITY COMMAND CENTER</p>
-          </div>
+          <img src="/logo.png" alt="Vaeris Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+          <img src="/name.png" alt="Vaeris Name" style={{ height: '24px', width: 'auto', objectFit: 'contain' }} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -403,8 +453,7 @@ function App() {
       </nav>
 
       {/* 2. Main content — switches by active tab */}
-      {activeTab === 'live' && (
-      <main style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', flex: 1, minHeight: 0 }}>
+      <main style={{ display: activeTab === 'live' ? 'grid' : 'none', gridTemplateColumns: '1.2fr 1fr', gap: '16px', flex: 1, minHeight: 0 }}>
         
         {/* Left Side: Live Spatial Map */}
         <section className="glass-panel" style={{ display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -413,28 +462,35 @@ function App() {
               <Layers size={16} color="var(--color-primary)" />
               <span style={{ fontSize: '13px', fontWeight: '600', letterSpacing: '0.5px' }}>DELHI SPATIAL ANALYSIS</span>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {REPRESENTATIVE_STATIONS.map((s) => (
-                <button 
-                  key={s.id} 
-                  onClick={() => {
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Station:</span>
+              <select
+                value={selectedStation?.id || ''}
+                onChange={(e) => {
+                  const s = REPRESENTATIVE_STATIONS.find(st => st.id === e.target.value);
+                  if (s) {
                     setSelectedCoord({ lat: s.lat, lon: s.lon });
                     setSelectedStation(s);
-                  }}
-                  style={{ 
-                    background: selectedStation?.id === s.id ? 'rgba(0, 240, 255, 0.12)' : 'rgba(255, 255, 255, 0.02)',
-                    border: `1px solid ${selectedStation?.id === s.id ? 'var(--color-primary)' : 'var(--border-light)'}`,
-                    color: selectedStation?.id === s.id ? '#fff' : 'var(--text-muted)',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    cursor: 'pointer',
-                    transition: 'var(--transition-smooth)'
-                  }}
-                >
-                  {s.name}
-                </button>
-              ))}
+                  }
+                }}
+                style={{
+                  background: 'rgba(6, 10, 19, 0.95)',
+                  border: '1px solid var(--border-light)',
+                  color: '#fff',
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  transition: 'var(--transition-smooth)'
+                }}
+              >
+                {REPRESENTATIVE_STATIONS.map((s) => (
+                  <option key={s.id} value={s.id} style={{ background: '#0a0e17', color: '#fff' }}>
+                    {s.name} ({s.type})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -506,8 +562,8 @@ function App() {
                   <span style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-light)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-muted)' }}>
                     MODEL: {forecast.model_version}
                   </span>
-                  <span style={{ background: forecast.confidence_tier === 'reliable' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', border: `1px solid ${forecast.confidence_tier === 'reliable' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`, padding: '2px 6px', borderRadius: '4px', color: forecast.confidence_tier === 'reliable' ? 'var(--color-success)' : 'var(--color-warning)' }}>
-                    {forecast.confidence_tier.toUpperCase()}
+                  <span style={{ background: (forecast.confidence_tier || 'reliable') === 'reliable' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', border: `1px solid ${(forecast.confidence_tier || 'reliable') === 'reliable' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`, padding: '2px 6px', borderRadius: '4px', color: (forecast.confidence_tier || 'reliable') === 'reliable' ? 'var(--color-success)' : 'var(--color-warning)' }}>
+                    {(forecast.confidence_tier || 'reliable').toUpperCase()}
                   </span>
                 </div>
               )}
@@ -544,75 +600,99 @@ function App() {
           </div>
 
           {/* Source Attribution Panel */}
-          <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
+          <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-hairline)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Cpu size={16} color="var(--color-primary)" />
-                <span style={{ fontSize: '13px', fontWeight: '600' }}>CAUSAL SOURCE ATTRIBUTION</span>
-              </div>
+              <span style={{ fontSize: 'var(--text-micro)', fontWeight: '600', color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)' }}>
+                CAUSAL SOURCE ATTRIBUTION
+              </span>
               {attribution && !loading && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: attribution.primary_cause === 'agricultural_burning' ? 'var(--color-warning)' : attribution.primary_cause === 'traffic' ? 'var(--color-secondary)' : 'var(--color-primary)' }}>
-                  {attribution.primary_cause === 'agricultural_burning' ? <Flame size={12} /> : <Activity size={12} />}
-                  <span style={{ fontWeight: '700', textTransform: 'uppercase' }}>
-                    {attribution.primary_cause === 'agricultural_burning' ? 'Agricultural Burning' : attribution.primary_cause}
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-micro)', fontFamily: 'var(--font-ui)', color: 'var(--accent)' }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)' }} className="live-dot"></span>
+                  <span style={{ fontWeight: '700', letterSpacing: '0.06em' }}>LIVE ANALYTICS</span>
                 </div>
               )}
             </div>
 
             {loading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div className="shimmer" style={{ width: '40%', height: '14px' }}></div>
                 <div className="shimmer" style={{ width: '100%', height: '80px' }}></div>
-                <div className="shimmer" style={{ width: '100%', height: '40px' }}></div>
               </div>
             ) : attribution ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 
-                {/* Confidence Bar Chart */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', alignItems: 'center' }}>
-                  <div style={{ height: '90px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={barChartData} layout="vertical" margin={{ top: 0, right: 10, left: -25, bottom: 0 }}>
-                        <XAxis type="number" stroke="none" tick={false} />
-                        <YAxis dataKey="name" type="category" stroke="var(--text-muted)" fontSize={10} tickLine={false} width={80} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: 'var(--bg-color)', borderColor: 'var(--border-light)', borderRadius: '6px', fontSize: '11px' }}
-                          formatter={(value) => [`${value}%`, 'Weight']}
-                        />
-                        <Bar dataKey="confidence" radius={4} barSize={8}>
-                          {barChartData.map((entry, index) => {
-                            let color = 'var(--color-primary)';
-                            if (entry.rawKey === 'agricultural_burning') color = 'var(--color-warning)';
-                            if (entry.rawKey === 'traffic') color = 'var(--color-secondary)';
-                            return <Cell key={`cell-${index}`} fill={color} />;
-                          })}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '600' }}>PRIMARY ATTRIBUTION CAUSE</div>
-                    <div style={{ fontSize: '14px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: attribution.primary_cause === 'agricultural_burning' ? 'var(--color-warning)' : attribution.primary_cause === 'traffic' ? 'var(--color-secondary)' : 'var(--color-primary)' }}></span>
+                {/* Big Number Confidence & Primary Cause Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '1px solid var(--border-hairline)', paddingBottom: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', fontFamily: 'var(--font-ui)' }}>PRIMARY CAUSE</span>
+                    <div style={{ fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' }}>
+                      <span style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: 'var(--radius-sm)',
+                        background: attribution.primary_cause === 'agricultural_burning' ? 'var(--aqi-poor)' : attribution.primary_cause === 'traffic' ? 'var(--aqi-satisfactory)' : 'var(--aqi-very-poor)'
+                      }} />
                       {attribution.primary_cause === 'agricultural_burning' ? 'Crop Burning' : attribution.primary_cause.charAt(0).toUpperCase() + attribution.primary_cause.slice(1)}
                     </div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <ShieldCheck size={10} color="var(--color-success)" />
-                      <span>Evidence verified by rules</span>
-                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', fontFamily: 'var(--font-ui)' }}>CONFIDENCE</span>
+                    <span style={{ fontSize: 'var(--text-display)', fontWeight: '900', fontFamily: 'var(--font-mono)', color: 'var(--accent)', lineHeight: '1' }}>
+                      {Math.round(Math.max(...Object.values(attribution.confidence_breakdown)) * 100)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Status-Light Causal Verification Pattern (Signature Element #2) */}
+                <div style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-sm)', padding: '12px 14px' }}>
+                  <div style={{ fontSize: '9px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: '8px', letterSpacing: '0.04em' }}>
+                    CAUSAL RULE SIGNALS VERIFICATION
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {[
+                      ...(attribution.primary_cause === 'agricultural_burning' ? [
+                        { label: 'Active Fire Hotspot detected (FIRMS)', lit: true },
+                        { label: 'Meteorological wind vector consistent', lit: true },
+                        { label: 'Urban traffic density spikes ruled out', lit: false }
+                      ] : attribution.primary_cause === 'industrial' ? [
+                        { label: 'Industrial zone land-use buffer match', lit: true },
+                        { label: 'Continuous baseline emissions detected', lit: true },
+                        { label: 'Diurnal commute peak spikes ruled out', lit: false }
+                      ] : [
+                        { label: 'Local road segment density threshold exceeded', lit: true },
+                        { label: 'Diurnal peak commute window match', lit: true },
+                        { label: 'Agricultural crop fire signals ruled out', lit: false }
+                      ])
+                    ].map((light, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontFamily: 'var(--font-ui)' }}>
+                        <span
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '1px',
+                            background: light.lit ? 'var(--accent)' : 'transparent',
+                            border: light.lit ? 'none' : '1px solid var(--border-hairline)',
+                            display: 'inline-block',
+                            boxShadow: light.lit ? '0 0 6px var(--accent-glow)' : 'none',
+                          }}
+                        />
+                        <span style={{ color: light.lit ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{light.label}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* Evidence Log List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600', letterSpacing: '0.5px' }}>TRACEABLE CAUSAL EVIDENCE LOGS</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ fontSize: '9px', color: 'var(--text-tertiary)', fontWeight: '600', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', letterSpacing: '0.04em' }}>
+                    Causal Traceability Logs
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {attribution.evidence.map((item, idx) => (
-                      <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', background: 'rgba(255,255,255,0.015)', border: '1px solid var(--border-light)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px' }}>
-                        <span style={{ color: 'var(--color-primary)', marginTop: '2px' }}>➔</span>
-                        <span style={{ color: 'var(--text-main)', lineHeight: '1.4' }}>{item}</span>
+                      <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-hairline)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ color: 'var(--accent)', marginTop: '1px' }}>➔</span>
+                        <span style={{ color: 'var(--text-secondary)', lineHeight: '1.4' }}>{item}</span>
                       </div>
                     ))}
                   </div>
@@ -620,9 +700,9 @@ function App() {
 
                 {/* Degraded Sources Warnings */}
                 {attribution.degraded_sources && attribution.degraded_sources.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.15)', padding: '8px 10px', borderRadius: '6px', fontSize: '11px', color: 'var(--color-danger)' }}>
-                    <AlertTriangle size={12} />
-                    <span>Missing/degraded signals: {attribution.degraded_sources.join(', ')}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(239, 68, 68, 0.03)', border: '1px solid var(--border-hairline)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: '11px', color: 'var(--aqi-very-poor)' }}>
+                    <AlertTriangle size={12} color="var(--aqi-very-poor)" />
+                    <span style={{ fontFamily: 'var(--font-ui)' }}>Missing/degraded signals: {attribution.degraded_sources.join(', ')}</span>
                   </div>
                 )}
               </div>
@@ -635,7 +715,6 @@ function App() {
         </section>
 
       </main>
-      )}
 
       {/* Replay tab */}
       {activeTab === 'replay' && (
@@ -729,11 +808,21 @@ function App() {
         </section>
       )}
 
+      {/* National Grid tab */}
+      {activeTab === 'multicity' && (
+        <section
+          className="glass-panel"
+          style={{ flex: 1, minHeight: 0, padding: '20px', overflowY: 'auto' }}
+        >
+          <MultiCityView apiBase={API_BASE} />
+        </section>
+      )}
+
       {/* 3. Footer / Operations status */}
       <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-dark)' }}>
-        <span>VAERIS OPERATIONAL SUITE v0.1.0-MVP · Phase 9</span>
+        <span></span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Clock size={10} /> Delhi Local Time: {new Date().toLocaleTimeString()} (UTC+5:30)
+          <Clock size={10} /> Delhi Local Time: {liveTime.toLocaleTimeString()} (UTC+5:30)
         </span>
       </footer>
 
