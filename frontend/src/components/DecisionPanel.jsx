@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, Users, DollarSign, Timer, AlertTriangle, Cpu, Heart } from 'lucide-react';
+import { Users, DollarSign, Timer, AlertTriangle, Cpu, Heart } from 'lucide-react';
 
 export default function DecisionPanel({ baselineAqi = 245, apiBase = "http://localhost:8000" }) {
   const [budget, setBudget] = useState(4000);

@@ -16,7 +16,6 @@
 import { useState, useEffect } from 'react';
 import {
   ArrowDown,
-  TrendingDown,
   TrendingUp,
   Target,
   Users,

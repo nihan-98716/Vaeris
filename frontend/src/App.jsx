@@ -12,14 +12,10 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip,
-  BarChart,
-  Bar,
-  Cell
+  Tooltip
 } from 'recharts';
 import { 
   Wind, 
-  Flame, 
   Activity, 
   AlertTriangle, 
   MapPin, 
@@ -27,7 +23,6 @@ import {
   Clock, 
   TrendingUp,
   TrendingDown,
-  Cpu,
   Info,
   ShieldCheck
 } from 'lucide-react';
@@ -377,15 +372,7 @@ function App() {
     return [...history, ...forecastPoints];
   }, [forecast, attribution, selectedStation]);
 
-  // Format attribution confidences into an array for Recharts
-  const barChartData = React.useMemo(() => {
-    if (!attribution || !attribution.confidence_breakdown) return [];
-    return Object.entries(attribution.confidence_breakdown).map(([source, conf]) => ({
-      name: source === "agricultural_burning" ? "Crop Burning" : source.charAt(0).toUpperCase() + source.slice(1),
-      confidence: Math.round(conf * 100),
-      rawKey: source
-    })).sort((a, b) => b.confidence - a.confidence);
-  }, [attribution]);
+
 
   // Get AQI category details
   const getAqiCategory = (aqi) => {
