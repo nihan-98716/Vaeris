@@ -279,3 +279,40 @@ class InvestigateResponse(BaseModel):
         default=False,
         description="True if LLM summary failed/timed out, falling back to deterministic summary",
     )
+
+
+class AdvisoryRequest(BaseModel):
+    """
+    Validated request parameters for generating citizen health advisory alerts.
+    """
+
+    current_aqi: float = Field(..., description="Current measured AQI value", ge=0.0)
+    forecasted_aqi: float = Field(
+        default=None, description="Forecasted 24h AQI value (optional)", ge=0.0
+    )
+    primary_cause: str = Field(
+        default="traffic", description="Attributed primary cause of pollution spike"
+    )
+    language: str = Field(
+        default="en", description="Target language code: 'en' (English) or 'hi' (Hindi)"
+    )
+    enable_llm: bool = Field(
+        default=True, description="Flag to enable LLM summary generation"
+    )
+
+
+class AdvisoryResponse(BaseModel):
+    """
+    Validated response model for the citizen health advisory alert.
+    """
+
+    aqi_category: str = Field(..., description="AQI severity band category")
+    health_message: str = Field(..., description="Summary alert warning message")
+    recommended_precautions: List[str] = Field(
+        ..., description="List of recommended precaution bullet points"
+    )
+    language: str = Field(..., description="Assigned response language code")
+    llm_error: bool = Field(
+        default=False,
+        description="True if LLM generation failed/timed out, falling back to deterministic template",
+    )

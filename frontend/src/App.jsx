@@ -3,6 +3,7 @@ import maplibregl from 'maplibre-gl';
 import DecisionPanel from './components/DecisionPanel';
 import BeforeAfterPanel from './components/BeforeAfterPanel';
 import ReplayTimeline from './components/ReplayTimeline';
+import CitizenAdvisoryPanel from './components/CitizenAdvisoryPanel';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -332,6 +333,7 @@ function App() {
     { id: 'live',         label: 'LIVE INTELLIGENCE',  Icon: Activity     },
     { id: 'replay',       label: 'NOV 13–18 REPLAY',   Icon: Clock        },
     { id: 'before-after', label: 'BEFORE / AFTER',     Icon: TrendingDown },
+    { id: 'advisory',     label: 'CITIZEN ADVISORY',   Icon: ShieldCheck  },
   ];
 
   return (
@@ -712,9 +714,24 @@ function App() {
         </section>
       )}
 
+      {/* Citizen Advisory tab */}
+      {activeTab === 'advisory' && (
+        <section
+          className="glass-panel"
+          style={{ flex: 1, minHeight: 0, padding: '20px', overflowY: 'auto' }}
+        >
+          <CitizenAdvisoryPanel
+            currentAqi={selectedStation ? selectedStation.aqi : 300}
+            primaryCause={attribution?.primary_cause || 'traffic'}
+            forecastAqi={forecast?.value || null}
+            apiBase={API_BASE}
+          />
+        </section>
+      )}
+
       {/* 3. Footer / Operations status */}
       <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-dark)' }}>
-        <span>VAERIS OPERATIONAL SUITE v0.1.0-MVP · Phase 7</span>
+        <span>VAERIS OPERATIONAL SUITE v0.1.0-MVP · Phase 9</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <Clock size={10} /> Delhi Local Time: {new Date().toLocaleTimeString()} (UTC+5:30)
         </span>
