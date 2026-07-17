@@ -22,8 +22,9 @@ import {
 } from 'lucide-react';
 import {
   ResponsiveContainer,
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -268,41 +269,74 @@ export default function MultiCityView({ apiBase }) {
       {/* Comparative chart block */}
       {!loading && (
         <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <TrendingDown size={16} color="var(--color-primary)" />
-            <h3 style={{ fontSize: '12.5px', fontWeight: 700, color: '#fff' }}>Comparative Impact Analysis</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <TrendingDown size={16} color="var(--color-primary)" />
+              <h3 style={{ fontSize: '12.5px', fontWeight: 700, color: '#fff' }}>Comparative Impact Analysis</h3>
+            </div>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+              Dual-Axis: AQI Levels (Left) vs. Projected Reduction (Right)
+            </span>
           </div>
 
           <div style={{ width: '100%', height: '240px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
+              <ComposedChart
                 data={chartData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                barGap={8}
+                margin={{ top: 10, right: 15, left: 10, bottom: 15 }}
+                barGap={6}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} />
-                <YAxis stroke="var(--text-muted)" fontSize={10} domain={[0, 400]} />
+                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} tickLine={false} />
+                <YAxis
+                  yAxisId="left"
+                  stroke="var(--text-muted)"
+                  fontSize={10}
+                  tickLine={false}
+                  domain={[0, 400]}
+                  label={{ value: 'AQI Value', angle: -90, position: 'insideLeft', offset: -5, fill: 'var(--text-dark)', fontSize: 9 }}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke="#00f0ff"
+                  fontSize={10}
+                  tickLine={false}
+                  domain={[0, 50]}
+                  unit="%"
+                  label={{ value: 'Risk Reduction (%)', angle: 90, position: 'insideRight', offset: -5, fill: 'var(--text-dark)', fontSize: 9 }}
+                />
                 <Tooltip
-                  contentStyle={{ background: 'var(--bg-dark)', border: '1px solid var(--border-light)', borderRadius: '6px', fontSize: '11px' }}
+                  contentStyle={{ background: 'var(--bg-dark)', border: '1px solid var(--border-light)', borderRadius: '8px', fontSize: '11px' }}
                   labelStyle={{ color: 'var(--color-primary)', fontWeight: 'bold' }}
                 />
                 <Legend verticalAlign="top" height={36} iconSize={10} wrapperStyle={{ fontSize: '10.5px' }} />
                 
-                <Bar dataKey="Current AQI" fill="rgba(249, 115, 22, 0.7)" radius={[4, 4, 0, 0]}>
+                <Bar yAxisId="left" dataKey="Current AQI" fill="rgba(249, 115, 22, 0.7)" radius={[4, 4, 0, 0]} barSize={20}>
                   {chartData.map((entry, index) => {
                     const color = getAqiStyle(entry["Current AQI"]).color;
-                    return <Cell key={`cell-${index}`} fill={color} fillOpacity={0.4} stroke={color} strokeWidth={1} />;
+                    return <Cell key={`cell-${index}`} fill={color} fillOpacity={0.3} stroke={color} strokeWidth={1} />;
                   })}
                 </Bar>
                 
-                <Bar dataKey="Projected AQI" fill="rgba(16, 185, 129, 0.7)" radius={[4, 4, 0, 0]}>
+                <Bar yAxisId="left" dataKey="Projected AQI" fill="rgba(16, 185, 129, 0.7)" radius={[4, 4, 0, 0]} barSize={20}>
                   {chartData.map((entry, index) => {
                     const color = getAqiStyle(entry["Projected AQI"]).color;
                     return <Cell key={`cell-proj-${index}`} fill={color} fillOpacity={0.5} stroke={color} strokeWidth={1} />;
                   })}
                 </Bar>
-              </BarChart>
+
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="reduction"
+                  stroke="#00f0ff"
+                  strokeWidth={2}
+                  dot={{ fill: '#00f0ff', r: 4 }}
+                  activeDot={{ r: 6 }}
+                  name="Indicative Risk Reduction (%)"
+                />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>

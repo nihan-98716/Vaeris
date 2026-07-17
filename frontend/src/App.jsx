@@ -76,6 +76,17 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // Trigger MapLibre canvas resize when returning to 'live' tab to prevent blank maps
+  useEffect(() => {
+    if (activeTab === 'live' && map.current) {
+      setTimeout(() => {
+        if (map.current) {
+          map.current.resize();
+        }
+      }, 80);
+    }
+  }, [activeTab]);
+
   // Check API health on mount
   useEffect(() => {
     async function checkApiConnection() {
@@ -423,8 +434,7 @@ function App() {
       </nav>
 
       {/* 2. Main content — switches by active tab */}
-      {activeTab === 'live' && (
-      <main style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', flex: 1, minHeight: 0 }}>
+      <main style={{ display: activeTab === 'live' ? 'grid' : 'none', gridTemplateColumns: '1.2fr 1fr', gap: '16px', flex: 1, minHeight: 0 }}>
         
         {/* Left Side: Live Spatial Map */}
         <section className="glass-panel" style={{ display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -662,7 +672,6 @@ function App() {
         </section>
 
       </main>
-      )}
 
       {/* Replay tab */}
       {activeTab === 'replay' && (
