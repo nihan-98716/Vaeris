@@ -13,7 +13,6 @@ import psycopg2
 from backend.config import settings
 from backend.logging import logger
 
-
 MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
 
 
@@ -56,7 +55,12 @@ def seed_database() -> None:
                     return
 
                 logger.info("Seeding database with offline snapshot history...")
-                snapshot_path = Path(__file__).resolve().parent.parent.parent / "data" / "snapshots" / "delhi_2024-11-13_to_2024-11-18.json"
+                snapshot_path = (
+                    Path(__file__).resolve().parent.parent.parent
+                    / "data"
+                    / "snapshots"
+                    / "delhi_2024-11-13_to_2024-11-18.json"
+                )
                 if not snapshot_path.exists():
                     logger.error(f"Snapshot file not found at {snapshot_path}")
                     return
@@ -73,7 +77,15 @@ def seed_database() -> None:
                         VALUES (%s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326))
                         ON CONFLICT (id) DO NOTHING;
                         """,
-                        (s["id"], s["name"], "Delhi", s["latitude"], s["longitude"], s["longitude"], s["latitude"])
+                        (
+                            s["id"],
+                            s["name"],
+                            "Delhi",
+                            s["latitude"],
+                            s["longitude"],
+                            s["longitude"],
+                            s["latitude"],
+                        ),
                     )
 
                 # Seed AQI measurements
@@ -85,7 +97,13 @@ def seed_database() -> None:
                         VALUES (%s, %s, %s, %s, %s)
                         ON CONFLICT (station_id, timestamp) DO NOTHING;
                         """,
-                        (r["station_id"], r["timestamp"], r.get("aqi"), r.get("pm25"), r.get("pm10"))
+                        (
+                            r["station_id"],
+                            r["timestamp"],
+                            r.get("aqi"),
+                            r.get("pm25"),
+                            r.get("pm10"),
+                        ),
                     )
 
                 # Seed fire hotspots
@@ -97,7 +115,15 @@ def seed_database() -> None:
                         VALUES (%s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), %s, %s, %s)
                         ON CONFLICT (latitude, longitude, acq_datetime) DO NOTHING;
                         """,
-                        (float(r["latitude"]), float(r["longitude"]), float(r["longitude"]), float(r["latitude"]), r.get("brightness"), r.get("frp"), r["acq_datetime"])
+                        (
+                            float(r["latitude"]),
+                            float(r["longitude"]),
+                            float(r["longitude"]),
+                            float(r["latitude"]),
+                            r.get("brightness"),
+                            r.get("frp"),
+                            r["acq_datetime"],
+                        ),
                     )
 
                 # Seed weather readings
@@ -109,17 +135,25 @@ def seed_database() -> None:
                         VALUES (%s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), %s, %s, %s, %s, %s)
                         ON CONFLICT (latitude, longitude, timestamp) DO NOTHING;
                         """,
-                        (float(r["latitude"]), float(r["longitude"]), float(r["longitude"]), float(r["latitude"]), r["timestamp"], r.get("temperature"), r.get("humidity"), r.get("wind_speed"), r.get("wind_deg"))
+                        (
+                            float(r["latitude"]),
+                            float(r["longitude"]),
+                            float(r["longitude"]),
+                            float(r["latitude"]),
+                            r["timestamp"],
+                            r.get("temperature"),
+                            r.get("humidity"),
+                            r.get("wind_speed"),
+                            r.get("wind_deg"),
+                        ),
                     )
 
                 # Seed a default osm road cache entry to prevent empty joins
-                cursor.execute(
-                    """
+                cursor.execute("""
                     INSERT INTO osm_road_cache (min_lat, min_lon, max_lat, max_lon, road_count)
                     VALUES (28.0, 76.5, 29.0, 77.5, 150)
                     ON CONFLICT DO NOTHING;
-                    """
-                )
+                    """)
                 logger.info("Successfully seeded database from offline snapshot.")
     except Exception as e:
         logger.error(f"Error seeding database: {e}", exc_info=True)

@@ -22,11 +22,11 @@ def test_fire_dominant_scenario():
         "fire_events": get_fire_events_for_signals(),
         "wind_direction_deg": 315.0,
         "wind_speed_ms": 3.0,
-        "road_density_500m": 0.2,        # low traffic, so traffic rule shouldn't fire
+        "road_density_500m": 0.2,  # low traffic, so traffic rule shouldn't fire
         "land_use_category": "residential",
         "aqi_now": 260.0,
-        "aqi_rolling_mean_24h": 110.0,    # spike of 150, well above threshold
-        "hour_of_day": 5,                 # not a commute hour, further suppressing the traffic rule
+        "aqi_rolling_mean_24h": 110.0,  # spike of 150, well above threshold
+        "hour_of_day": 5,  # not a commute hour, further suppressing the traffic rule
     }
     result = run_attribution(signals)
     assert result.primary_cause == "agricultural_burning", result
@@ -37,14 +37,14 @@ def test_fire_dominant_scenario():
 
 def test_traffic_dominant_scenario():
     signals = {
-        "fire_events": [],                # no fire data at all
+        "fire_events": [],  # no fire data at all
         "wind_direction_deg": 90.0,
         "wind_speed_ms": 2.0,
-        "road_density_500m": 0.9,         # high traffic density
+        "road_density_500m": 0.9,  # high traffic density
         "land_use_category": "mixed",
         "aqi_now": 150.0,
-        "aqi_rolling_mean_24h": 100.0,     # spike of 50, above threshold
-        "hour_of_day": 8,                  # morning commute hour
+        "aqi_rolling_mean_24h": 100.0,  # spike of 50, above threshold
+        "hour_of_day": 8,  # morning commute hour
     }
     result = run_attribution(signals)
     assert result.primary_cause == "traffic", result
@@ -64,7 +64,9 @@ def test_stagnant_conditions_modifier_dampens_confidence():
     normal_signals = {"wind_speed_ms": 3.0}
     stagnant_signals = {"wind_speed_ms": 0.3}
 
-    assert stagnant_conditions_modifier(stagnant_signals) < stagnant_conditions_modifier(normal_signals)
+    assert stagnant_conditions_modifier(
+        stagnant_signals
+    ) < stagnant_conditions_modifier(normal_signals)
     assert stagnant_conditions_modifier(normal_signals) == 1.0
 
 

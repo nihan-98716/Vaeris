@@ -33,7 +33,9 @@ def test_make_training_examples_shapes_align():
     X, y, meta = make_training_examples(raw, horizon_hours=24)
     assert len(X) == len(y) == len(meta)
     assert list(X.columns) == FORECASTING_FEATURE_COLUMNS
-    assert not X.isna().any().any(), "training features should have no NaNs after dropna"
+    assert (
+        not X.isna().any().any()
+    ), "training features should have no NaNs after dropna"
 
 
 def test_make_training_examples_target_is_shifted_forward():
@@ -55,7 +57,9 @@ def test_build_inference_feature_row_single_row():
 
 def test_build_inference_feature_row_raises_on_insufficient_history():
     raw = generate_history(days=10, inject_fire_event=False)
-    station_history = raw[raw["station_id"] == "station_ito_delhi"].tail(2)  # far too little history
+    station_history = raw[raw["station_id"] == "station_ito_delhi"].tail(
+        2
+    )  # far too little history
     try:
         build_inference_feature_row(station_history, horizon_hours=24)
         assert False, "expected a ValueError due to insufficient history"
