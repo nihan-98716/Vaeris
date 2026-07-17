@@ -63,10 +63,18 @@ function App() {
   const [errorMessage, setErrorMessage] = useState(null);
   // Phase 7: tab navigation
   const [activeTab, setActiveTab] = useState('live'); // 'live' | 'replay' | 'before-after'
+  const [liveTime, setLiveTime] = useState(new Date());
 
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markersRef = useRef([]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Check API health on mount
   useEffect(() => {
@@ -762,7 +770,7 @@ function App() {
       <footer style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-dark)' }}>
         <span>VAERIS OPERATIONAL SUITE v0.1.0-MVP · Phase 10</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Clock size={10} /> Delhi Local Time: {new Date().toLocaleTimeString()} (UTC+5:30)
+          <Clock size={10} /> Delhi Local Time: {liveTime.toLocaleTimeString()} (UTC+5:30)
         </span>
       </footer>
 

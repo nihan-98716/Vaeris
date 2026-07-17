@@ -22,6 +22,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  Legend,
 } from 'recharts';
 import {
   Play,
@@ -329,37 +330,51 @@ export default function ReplayTimeline() {
 
       {/* ── Hourly AQI chart ── */}
       <div style={{ flex: 1, minHeight: 0 }}>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6 }}>
-          HOURLY AQI — {selectedDay.date} · ALL MONITORING STATIONS
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>
+            Hourly AQI Trends — {selectedDay.date}
+          </div>
+          <div style={{ fontSize: 9.5, color: 'var(--text-muted)', lineHeight: '1.3' }}>
+            Interactive timeline tracking pollution build-up across representative monitoring zones. Reference lines indicate standard CPCB warning bands.
+          </div>
         </div>
-        <ResponsiveContainer width="100%" height={175}>
-          <LineChart data={chartData} margin={{ top: 5, right: 8, left: -22, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height={190}>
+          <LineChart data={chartData} margin={{ top: 5, right: 15, left: 12, bottom: 15 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
             <XAxis
               dataKey="hour"
-              stroke="var(--text-dark)"
+              stroke="var(--text-muted)"
               fontSize={9}
               tickLine={false}
-              interval={5}
+              interval={3}
+              label={{ value: 'Time of Day (Hours)', position: 'insideBottom', offset: -10, fill: 'var(--text-dark)', fontSize: 9 }}
             />
             <YAxis
-              stroke="var(--text-dark)"
+              stroke="var(--text-muted)"
               fontSize={9}
               tickLine={false}
               domain={[50, 500]}
+              label={{ value: 'AQI Level', angle: -90, position: 'insideLeft', offset: -5, fill: 'var(--text-dark)', fontSize: 9 }}
             />
             <Tooltip content={<ChartTooltip />} />
+            <Legend verticalAlign="top" height={24} iconSize={8} wrapperStyle={{ fontSize: '9px', paddingBottom: '4px' }} />
             <ReferenceLine
               y={300}
-              stroke="rgba(249,115,22,0.35)"
+              stroke="rgba(249,115,22,0.3)"
               strokeDasharray="4 3"
-              label={{ value: 'Poor', fill: '#f97316', fontSize: 8, position: 'insideTopLeft' }}
+              label={{ value: 'Poor (300)', fill: '#f97316', fontSize: 7, position: 'insideTopLeft' }}
             />
             <ReferenceLine
               y={400}
-              stroke="rgba(239,68,68,0.35)"
+              stroke="rgba(239,68,68,0.3)"
               strokeDasharray="4 3"
-              label={{ value: 'V.Poor', fill: '#ef4444', fontSize: 8, position: 'insideTopLeft' }}
+              label={{ value: 'V.Poor (400)', fill: '#ef4444', fontSize: 7, position: 'insideTopLeft' }}
+            />
+            <ReferenceLine
+              y={450}
+              stroke="rgba(220,38,38,0.3)"
+              strokeDasharray="4 3"
+              label={{ value: 'Severe (450)', fill: '#dc2626', fontSize: 7, position: 'insideTopLeft' }}
             />
             {STATION_NAMES.map((name, i) => (
               <Line
