@@ -40,7 +40,17 @@ const REPRESENTATIVE_STATIONS = [
   { id: "DL002", name: "Lodhi Road", lat: 28.5919, lon: 77.2272, aqi: 120, type: "Mixed Residential" },
   { id: "DL003", name: "Dwarka Sector 8", lat: 28.5710, lon: 77.0719, aqi: 190, type: "Residential/Suburban" },
   { id: "DL004", name: "Mandir Marg", lat: 28.6341, lon: 77.2005, aqi: 155, type: "Urban Center" },
-  { id: "DL005", name: "Punjabi Bagh", lat: 28.6687, lon: 77.1167, aqi: 210, type: "Traffic Corridor" }
+  { id: "DL005", name: "Punjabi Bagh", lat: 28.6687, lon: 77.1167, aqi: 210, type: "Traffic Corridor" },
+  { id: "DL006", name: "R.K. Puram", lat: 28.5660, lon: 77.1862, aqi: 175, type: "Residential" },
+  { id: "DL007", name: "Okhla Phase 3", lat: 28.5448, lon: 77.2858, aqi: 230, type: "Industrial" },
+  { id: "DL008", name: "Siri Fort", lat: 28.5504, lon: 77.2159, aqi: 135, type: "Residential" },
+  { id: "DL009", name: "Bawana", lat: 28.7972, lon: 77.0763, aqi: 280, type: "Industrial" },
+  { id: "DL010", name: "IGI Airport T3", lat: 28.5627, lon: 77.0945, aqi: 160, type: "Airport/Traffic" },
+  { id: "DL011", name: "ITO", lat: 28.6286, lon: 77.2410, aqi: 265, type: "Heavy Traffic Corridor" },
+  { id: "DL012", name: "Narela", lat: 28.8228, lon: 77.1019, aqi: 240, type: "Industrial/Border" },
+  { id: "DL013", name: "Wazirpur", lat: 28.6997, lon: 77.1654, aqi: 255, type: "Industrial" },
+  { id: "DL014", name: "Shadipur", lat: 28.6514, lon: 77.1503, aqi: 220, type: "Industrial/Traffic" },
+  { id: "DL015", name: "Jahangirpuri", lat: 28.7324, lon: 77.1706, aqi: 290, type: "Industrial" }
 ];
 
 function App() {
@@ -415,28 +425,35 @@ function App() {
               <Layers size={16} color="var(--color-primary)" />
               <span style={{ fontSize: '13px', fontWeight: '600', letterSpacing: '0.5px' }}>DELHI SPATIAL ANALYSIS</span>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {REPRESENTATIVE_STATIONS.map((s) => (
-                <button 
-                  key={s.id} 
-                  onClick={() => {
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Station:</span>
+              <select
+                value={selectedStation?.id || ''}
+                onChange={(e) => {
+                  const s = REPRESENTATIVE_STATIONS.find(st => st.id === e.target.value);
+                  if (s) {
                     setSelectedCoord({ lat: s.lat, lon: s.lon });
                     setSelectedStation(s);
-                  }}
-                  style={{ 
-                    background: selectedStation?.id === s.id ? 'rgba(0, 240, 255, 0.12)' : 'rgba(255, 255, 255, 0.02)',
-                    border: `1px solid ${selectedStation?.id === s.id ? 'var(--color-primary)' : 'var(--border-light)'}`,
-                    color: selectedStation?.id === s.id ? '#fff' : 'var(--text-muted)',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    cursor: 'pointer',
-                    transition: 'var(--transition-smooth)'
-                  }}
-                >
-                  {s.name}
-                </button>
-              ))}
+                  }
+                }}
+                style={{
+                  background: 'rgba(6, 10, 19, 0.95)',
+                  border: '1px solid var(--border-light)',
+                  color: '#fff',
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  transition: 'var(--transition-smooth)'
+                }}
+              >
+                {REPRESENTATIVE_STATIONS.map((s) => (
+                  <option key={s.id} value={s.id} style={{ background: '#0a0e17', color: '#fff' }}>
+                    {s.name} ({s.type})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
