@@ -15,7 +15,6 @@ import {
   Tooltip
 } from 'recharts';
 import { 
-  Wind, 
   Activity, 
   AlertTriangle, 
   MapPin, 
@@ -400,9 +399,7 @@ function App() {
       {/* 1. Header Bar */}
       <header className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #00f0ff, #a855f7)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Wind size={24} color="#000" />
-          </div>
+          <img src="/logo.png" alt="Vaeris Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
           <div>
             <h1 style={{ fontFamily: 'var(--font-family-display)', fontSize: '20px', fontWeight: '800', tracking: 'wide', background: 'linear-gradient(90deg, #00f0ff, #fff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               VAERIS
