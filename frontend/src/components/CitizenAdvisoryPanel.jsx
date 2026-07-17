@@ -159,6 +159,7 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
   const [advisory, setAdvisory] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [isLlm, setIsLlm]       = useState(false);
+  const [enableLlm, setEnableLlm] = useState(false); // default to false for instant local mode
 
   const baselineAqi = Math.round(currentAqi || 300);
   const forecastVal = forecastAqi ? Math.round(forecastAqi) : null;
@@ -177,7 +178,7 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
           (forecastVal ? `&forecasted_aqi=${forecastVal}` : '') +
           `&primary_cause=${source}` +
           `&language=${language}` +
-          `&enable_llm=true`;
+          `&enable_llm=${enableLlm}`;
 
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
@@ -232,7 +233,7 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
     return () => {
       isMounted = false;
     };
-  }, [baselineAqi, forecastVal, source, language, apiBase]);
+  }, [baselineAqi, forecastVal, source, language, enableLlm, apiBase]);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' }}>
@@ -332,6 +333,41 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
             }}
           >
             हिंदी / HINDI
+          </button>
+        </div>
+
+        {/* AI Generator Toggle */}
+        <div className="glass-panel" style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '8px' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Sparkles size={12} color={enableLlm ? 'var(--color-success)' : 'var(--text-dark)'} />
+            <span style={{ fontWeight: 600 }}>AI ADVISORY (LLM)</span>
+          </span>
+          <button
+            onClick={() => setEnableLlm(!enableLlm)}
+            style={{
+              background: enableLlm ? 'var(--color-success)' : 'rgba(255,255,255,0.06)',
+              border: 'none',
+              borderRadius: '20px',
+              width: '36px',
+              height: '18px',
+              position: 'relative',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                background: '#fff',
+                position: 'absolute',
+                left: enableLlm ? '20px' : '4px',
+                transition: 'left 0.2s',
+              }}
+            />
           </button>
         </div>
       </div>
