@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users, DollarSign, Timer, AlertTriangle, Cpu, Heart } from 'lucide-react';
 
-export default function DecisionPanel({ baselineAqi = 245, apiBase = "http://localhost:8000" }) {
+export default function DecisionPanel({ baselineAqi = 245, apiBase = "" }) {
   const [budget, setBudget] = useState(4000);
   const [inspectors, setInspectors] = useState(6);
   const [maxTravelTime, setMaxTravelTime] = useState(3.0);

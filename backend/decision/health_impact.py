@@ -2,7 +2,7 @@
 backend/decision/health_impact.py
 
 Calculates the indicative health benefit score for interventions based on the
-respiratory exposure risk coefficients from WHO (2021) guidelines.
+configured respiratory exposure risk coefficient.
 Never uses "DALY" in user-facing or internal indicator strings.
 """
 

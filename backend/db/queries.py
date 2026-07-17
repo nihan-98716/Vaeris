@@ -117,7 +117,7 @@ def get_recent_station_history(station_id: str, limit_hours: int = 48) -> pd.Dat
         SELECT a.timestamp, a.aqi,
                s.id AS station_id, s.latitude, s.longitude, s.name AS station_name,
                w.temperature, w.humidity, w.wind_speed, w.wind_deg AS wind_direction,
-               COALESCE(osm.road_count, 100) / 210.0 AS road_density_500m
+               CAST(COALESCE(osm.road_count, 100) AS double precision) / 210.0 AS road_density_500m
         FROM aqi_measurements a
         JOIN monitoring_stations s ON a.station_id = s.id
         LEFT JOIN LATERAL (
@@ -145,6 +145,8 @@ def get_recent_station_history(station_id: str, limit_hours: int = 48) -> pd.Dat
 
         # Convert to DataFrame
         df = pd.DataFrame([dict(r) for r in rows])
+        if "road_density_500m" in df.columns:
+            df["road_density_500m"] = df["road_density_500m"].astype(float)
         # Sort chronologically as expected by features.py
         df = df.sort_values("timestamp").reset_index(drop=True)
 

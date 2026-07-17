@@ -211,9 +211,9 @@ export default function MultiCityView({ apiBase }) {
 
                 {/* City name and confidence badge */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>{city.city_name.toUpperCase()}</h3>
-                  <span style={{ fontSize: '9px', textTransform: 'uppercase', color: city.status_level === 'high' ? 'var(--color-success)' : city.status_level === 'medium' ? 'var(--color-warning)' : 'var(--color-danger)', fontWeight: 700 }}>
-                    {city.status_level} verification
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>{(city.city_name || city.name || '').toUpperCase()}</h3>
+                  <span style={{ fontSize: '9px', textTransform: 'uppercase', color: (city.status_level || 'high') === 'high' ? 'var(--color-success)' : (city.status_level || 'high') === 'medium' ? 'var(--color-warning)' : 'var(--color-danger)', fontWeight: 700 }}>
+                    {city.status_level || 'high'} verification
                   </span>
                 </div>
 
@@ -227,22 +227,22 @@ export default function MultiCityView({ apiBase }) {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderLeft: '1px solid var(--border-light)' }}>
                     <span style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: 600 }}>PROJECTED AQI</span>
                     <span style={{ fontSize: '18px', fontWeight: 900, color: projStyle.color }}>{Math.round(city.projected_aqi)}</span>
-                    <span style={{ fontSize: '8px', color: 'var(--color-success)', fontWeight: 700 }}>-{Math.round(city.reduction_pct)}%</span>
+                    <span style={{ fontSize: '8px', color: 'var(--color-success)', fontWeight: 700 }}>-{Math.round(city.reduction_pct || 0)}%</span>
                   </div>
                 </div>
 
                 {/* Source attribution indicator */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px' }}>
-                  {getSourceIcon(city.primary_cause)}
+                  {getSourceIcon(city.primary_cause || 'unknown')}
                   <span style={{ color: 'var(--text-muted)' }}>Dominant source:</span>
-                  <strong style={{ color: '#fff', fontSize: '9.5px' }}>{city.primary_cause.replace('_', ' ').toUpperCase()}</strong>
+                  <strong style={{ color: '#fff', fontSize: '9.5px' }}>{(city.primary_cause || 'unknown').replace('_', ' ').toUpperCase()}</strong>
                 </div>
 
                 {/* Indicative health benefit */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', background: 'rgba(16, 185, 129, 0.04)', border: '1px solid rgba(16, 185, 129, 0.1)', padding: '6px 10px', borderRadius: '6px' }}>
                   <ShieldCheck size={13} color="var(--color-success)" />
                   <span style={{ color: 'var(--text-muted)', fontSize: '9px' }}>Respiratory Risk Reduction:</span>
-                  <strong style={{ color: 'var(--color-success)' }}>{Math.round(city.health_benefit)}</strong>
+                  <strong style={{ color: 'var(--color-success)' }}>{Math.round(city.health_benefit || 0)}</strong>
                 </div>
 
                 {/* Recommended Municipal interventions */}

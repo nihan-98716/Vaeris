@@ -35,11 +35,11 @@ def test_min_max_normalize():
 
 def test_calculate_health_benefit():
     benefit = calculate_health_benefit(aqi_reduction=20.0, population_affected=100000)
-    # 20 * 0.0104 * 100000 = 20800.0
-    assert benefit == 20800.0
+    # 20 * 0.008 * 100000 = 16000.0
+    assert benefit == 16000.0
 
 
-def test_constrained_greedy_solver_basic():
+def test_constrained_exact_solver_basic():
     # Case 1: Unconstrained (large budget, many inspectors, long travel time)
     # Should select multiple high-impact interventions
     res = optimize_interventions(
@@ -73,6 +73,18 @@ def test_constrained_greedy_solver_basic():
     )
     for item in res_time["selected_interventions"]:
         assert item["travel_time_hours"] <= 0.6
+
+
+def test_exact_solver_beats_known_greedy_failure_case():
+    res = optimize_interventions(
+        budget=3000.0, inspectors=10, max_travel_time_hours=2.5
+    )
+    selected_ids = {item["id"] for item in res["selected_interventions"]}
+    assert selected_ids == {
+        "stubble_burning_enforcement",
+        "halt_construction",
+        "road_sprinklers",
+    }
 
 
 def test_config_driven_weight_change():

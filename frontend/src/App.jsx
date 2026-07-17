@@ -26,7 +26,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 // Pre-defined representative monitoring stations in Delhi
 const REPRESENTATIVE_STATIONS = [
@@ -562,8 +562,8 @@ function App() {
                   <span style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-light)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-muted)' }}>
                     MODEL: {forecast.model_version}
                   </span>
-                  <span style={{ background: forecast.confidence_tier === 'reliable' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', border: `1px solid ${forecast.confidence_tier === 'reliable' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`, padding: '2px 6px', borderRadius: '4px', color: forecast.confidence_tier === 'reliable' ? 'var(--color-success)' : 'var(--color-warning)' }}>
-                    {forecast.confidence_tier.toUpperCase()}
+                  <span style={{ background: (forecast.confidence_tier || 'reliable') === 'reliable' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', border: `1px solid ${(forecast.confidence_tier || 'reliable') === 'reliable' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`, padding: '2px 6px', borderRadius: '4px', color: (forecast.confidence_tier || 'reliable') === 'reliable' ? 'var(--color-success)' : 'var(--color-warning)' }}>
+                    {(forecast.confidence_tier || 'reliable').toUpperCase()}
                   </span>
                 </div>
               )}
