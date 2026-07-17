@@ -7,6 +7,7 @@ Supports live DB queries with fallback to curated high-fidelity offline snapshot
 """
 
 import json
+import statistics
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
@@ -128,7 +129,7 @@ def convert_pm25_to_aqi(pm25: float) -> float:
 def fetch_live_aqi_from_openaq(lat: float, lon: float) -> float:
     """
     Queries the live OpenAQ REST API using the configured X-API-Key
-    to find the nearest active monitor and compute its current AQI.
+    to find multiple monitors near the coordinates and compute the median AQI.
     """
     api_key = settings.apis.openaq_api_key
     if not api_key:
@@ -137,14 +138,14 @@ def fetch_live_aqi_from_openaq(lat: float, lon: float) -> float:
 
     headers = {"X-API-Key": api_key}
 
-    # Bounding box +/- 0.5 degrees around coordinates
-    min_lon = lon - 0.5
-    max_lon = lon + 0.5
-    min_lat = lat - 0.5
-    max_lat = lat + 0.5
+    # Bounding box +/- 0.4 degrees around coordinates
+    min_lon = lon - 0.4
+    max_lon = lon + 0.4
+    min_lat = lat - 0.4
+    max_lat = lat + 0.4
 
     url_locs = "https://api.openaq.org/v3/locations"
-    params_locs = {"bbox": f"{min_lon},{min_lat},{max_lon},{max_lat}", "limit": 1}
+    params_locs = {"bbox": f"{min_lon},{min_lat},{max_lon},{max_lat}", "limit": 15}
 
     try:
         r = requests.get(url_locs, headers=headers, params=params_locs, timeout=10)
@@ -156,37 +157,41 @@ def fetch_live_aqi_from_openaq(lat: float, lon: float) -> float:
             )
             return None
 
-        loc = results[0]
-        loc_id = loc.get("id")
+        pm25_values = []
+        for loc in results:
+            loc_id = loc.get("id")
 
-        # Build map of sensor ID -> parameter name
-        sensor_to_param = {}
-        for s in loc.get("sensors", []):
-            sensor_to_param[s.get("id")] = s.get("parameter", {}).get("name")
+            # Build map of sensor ID -> parameter name
+            sensor_to_param = {}
+            for s in loc.get("sensors", []):
+                sensor_to_param[s.get("id")] = s.get("parameter", {}).get("name")
 
-        # Fetch latest measurements for this location
-        url_latest = f"https://api.openaq.org/v3/locations/{loc_id}/latest"
-        r_latest = requests.get(url_latest, headers=headers, timeout=10)
-        r_latest.raise_for_status()
-        latest_results = r_latest.json().get("results", [])
+            # Fetch latest measurements for this location
+            url_latest = f"https://api.openaq.org/v3/locations/{loc_id}/latest"
+            try:
+                r_latest = requests.get(url_latest, headers=headers, timeout=5)
+                r_latest.raise_for_status()
+                latest_results = r_latest.json().get("results", [])
+                for item in latest_results:
+                    s_id = item.get("sensorsId")
+                    param = sensor_to_param.get(s_id)
+                    val = item.get("value")
+                    if param == "pm25" and val is not None and val > 0:
+                        pm25_values.append(val)
+            except Exception:
+                continue
 
-        pm25_val = None
-        for item in latest_results:
-            s_id = item.get("sensorsId")
-            param = sensor_to_param.get(s_id)
-            if param == "pm25":
-                pm25_val = item.get("value")
-                break
-
-        if pm25_val is None and latest_results:
-            pm25_val = latest_results[0].get("value")
-
-        if pm25_val is not None:
-            aqi = convert_pm25_to_aqi(pm25_val)
+        if pm25_values:
+            median_pm25 = statistics.median(pm25_values)
+            aqi = convert_pm25_to_aqi(median_pm25)
             logger.info(
-                f"fetch_live_aqi_from_openaq: Coords ({lat}, {lon}) resolved to Loc {loc_id}, PM2.5 {pm25_val} -> AQI {aqi}"
+                f"fetch_live_aqi_from_openaq: Resolved coords ({lat}, {lon}) to median PM2.5 {median_pm25:.2f} -> AQI {aqi:.1f}"
             )
             return aqi
+        else:
+            logger.warning(
+                f"fetch_live_aqi_from_openaq: No active PM2.5 sensors found near ({lat}, {lon})"
+            )
 
     except Exception as e:
         logger.error(
