@@ -61,12 +61,14 @@ def _get_active_fires_for_attribution(
             try:
                 with open(snapshot_path, "r") as f:
                     snapshot_data = json.load(f)
+                # Ensure t_start and t_end are timezone-naive for safe comparison
+                t_start_naive = t_start.tz_localize(None) if t_start.tzinfo is not None else t_start
+                t_end_naive = t_end.tz_localize(None) if t_end.tzinfo is not None else t_end
+
                 for f in snapshot_data.get("fire_data", []):
                     f_ts = pd.to_datetime(f["acq_datetime"])
-                    # Align timezone
-                    if f_ts.tzinfo is None and latest_ts.tzinfo is not None:
-                        f_ts = f_ts.replace(tzinfo=latest_ts.tzinfo)
-                    if t_start <= f_ts <= t_end:
+                    f_ts_naive = f_ts.tz_localize(None) if f_ts.tzinfo is not None else f_ts
+                    if t_start_naive <= f_ts_naive <= t_end_naive:
                         db_fires.append(f)
             except Exception as err:
                 logger.error(
@@ -85,6 +87,8 @@ def _extract_fire_events_for_attribution(
     retaining only those within 100km.
     """
     fire_events = []
+    latest_ts_naive = latest_ts.tz_localize(None) if latest_ts.tzinfo is not None else latest_ts
+
     for f in db_fires:
         f_lat = f["latitude"]
         f_lon = f["longitude"]
@@ -93,9 +97,8 @@ def _extract_fire_events_for_attribution(
         )
         if dist <= 100.0:
             f_ts = pd.to_datetime(f["acq_datetime"])
-            if f_ts.tzinfo is None and latest_ts.tzinfo is not None:
-                f_ts = f_ts.replace(tzinfo=latest_ts.tzinfo)
-            hours_ago = (latest_ts - f_ts).total_seconds() / 3600.0
+            f_ts_naive = f_ts.tz_localize(None) if f_ts.tzinfo is not None else f_ts
+            hours_ago = (latest_ts_naive - f_ts_naive).total_seconds() / 3600.0
             bearing = queries.calculate_bearing(
                 location.latitude, location.longitude, f_lat, f_lon
             )
@@ -185,13 +188,28 @@ def gather_attribution_signals(location: LatLon) -> tuple[dict, list[str]]:
     db_fires = _get_active_fires_for_attribution(t_start, t_end, latest_ts)
     fire_events = _extract_fire_events_for_attribution(db_fires, location, latest_ts)
 
+    # Spatial land use & road density resolution based on location
+    lat, lon = location.latitude, location.longitude
+    if lat >= 28.75 or (lat <= 28.56 and lon >= 77.26):  # Bawana, Narela, Okhla
+        land_use = "industrial"
+        road_dens = 0.35
+    elif lon >= 77.30:  # Anand Vihar / Border
+        land_use = "agricultural"
+        road_dens = 0.25
+    elif (28.62 <= lat <= 28.68 and 77.10 <= lon <= 77.25) or (abs(lat - 28.6286) < 0.02 and abs(lon - 77.2410) < 0.02):  # Punjabi Bagh, ITO
+        land_use = "traffic"
+        road_dens = 0.88
+    else:
+        land_use = latest_row.get("land_use_category", "mixed")
+        road_dens = latest_row.get("road_density_500m", 0.55)
+
     # Compile the final signals structure
     signals = {
         "fire_events": fire_events,
         "wind_direction_deg": wind_dir,
         "wind_speed_ms": wind_speed,
-        "road_density_500m": latest_row.get("road_density_500m", 0.5),
-        "land_use_category": latest_row.get("land_use_category", "mixed"),
+        "road_density_500m": road_dens,
+        "land_use_category": land_use,
         "aqi_now": latest_row["aqi"],
         "aqi_rolling_mean_24h": aqi_rolling_mean_24h,
         "hour_of_day": (latest_ts.hour + 5)

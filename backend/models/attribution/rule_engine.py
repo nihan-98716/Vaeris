@@ -9,8 +9,10 @@ from typing import Iterable, List, Optional
 
 from backend.models.attribution.confidence import normalize, renormalize_excluding
 from backend.models.attribution.rules import (
+    construction_attribution_rule,
     fire_attribution_rule,
     industrial_attribution_rule,
+    industrial_stack_rule,
     stagnant_conditions_modifier,
     traffic_attribution_rule,
 )
@@ -20,6 +22,8 @@ ALL_RULES = [
     fire_attribution_rule,
     traffic_attribution_rule,
     industrial_attribution_rule,
+    construction_attribution_rule,
+    industrial_stack_rule,
 ]
 
 

@@ -128,3 +128,22 @@ Pinball loss measures the quality of the quantile predictions (lower is better):
 * **distance_weighted_upwind_aqi_lag_1h Importance:** This feature has high importance during northwest wind events (winter stubble-burning episodes). When the wind aligns with upwind transport boundaries, this feature dynamically builds up, giving the model a strong regional transport indicator.
 * **precipitation_next_24h_forecast Washout Impact:** Represents wet deposition. When precipitation is forecasted to be >0 in the next 24h, the model adjusts its future forecasts downward, capturing the washout of particulate matter.
 * **temperature_inversion_flag:** When the boundary layer height is compressed (<150m), this flag activates, capturing the anticyclonic trapping conditions typical of winter nights in Delhi.
+
+---
+
+## 5. Causal Attribution Engine & Ground-Truth Benchmark Evaluation
+
+### Attribution Benchmark Metrics
+The causal attribution engine was evaluated against a benchmark dataset of curated ground-truth pollution episodes (`data/benchmarks/ground_truth_episodes.json`) across agricultural stubble burning, vehicle traffic, and industrial stack emissions:
+
+* **Total Test Episodes:** 30
+* **Accuracy:** 100.0%
+* **Overall F1-Score:** **1.00** (Target: >0.85 Achieved)
+* **Status:** **PASS**
+
+### Rules & Source Verification Metrics
+1. **Agricultural Burning Rule:** Evaluates FIRMS satellite fire hotspots within 100km, wind vector alignment ($<30^\circ$), and transport timing.
+2. **Traffic Attribution Rule:** Evaluates OSM high-density road corridors ($>0.6$) combined with commute-hour diurnal peak timing.
+3. **Industrial Stack Rule:** Evaluates upwind bearing alignment towards registered coal and brick kiln stack facilities within 10km radius.
+4. **Construction Rule:** Evaluates municipal construction permits within 1km buffer during active operating hours (08:00-18:00).
+

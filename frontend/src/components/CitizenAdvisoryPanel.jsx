@@ -1,175 +1,192 @@
 /**
  * frontend/src/components/CitizenAdvisoryPanel.jsx
  *
- * Citizen Health Risk Advisory Panel (English & Hindi).
+ * Citizen Health Risk Advisory Panel (English, Hindi, Kannada, Tamil).
  * Displays AQI severity category, health warnings, and recommended precautions.
- * Supports dual languages and features a client-side offline fallback
- * if the backend API is unreachable.
+ * Instant zero-latency multi-language translation (EN, HI, KN, TA).
  */
 
 import { useState, useEffect } from 'react';
 import {
   ShieldAlert,
-  Languages,
   CheckCircle2,
   AlertTriangle,
-  Info,
-  Sparkles,
 } from 'lucide-react';
 
-// ─── Local CPCB Fallback Database ──────────────────────────────────────────────
+// ─── Local Multilingual Database Fallback ──────────────────────────────────────
 
 const LOCAL_AQI_BANDS = [
   {
     min: 0,
     max: 50,
-    category_en: "Good",
-    category_hi: "अच्छा",
-    message_en: "Air quality is satisfactory, and air pollution poses little or no risk.",
-    message_hi: "वायु की गुणवत्ता संतोषजनक है, और वायु प्रदूषण से कोई या बहुत कम जोखिम है।",
-    precautions_en: [
-      "No precautions needed. Great day for outdoor activities.",
-      "Keep windows open to maintain ventilation."
-    ],
-    precautions_hi: [
-      "किसी सावधानी की आवश्यकता नहीं है। बाहरी गतिविधियों के लिए बहुत अच्छा दिन है।",
-      "कमरों में वेंटिलेशन बनाए रखने के लिए खिड़कियाँ खुली रखें।"
-    ]
+    category: { en: "Good", hi: "अच्छा", kn: "ಉತ್ತಮ", ta: "நன்று" },
+    message: {
+      en: "Air quality is satisfactory, and air pollution poses little or no risk.",
+      hi: "वायु की गुणवत्ता संतोषजनक है, और वायु प्रदूषण से कोई या बहुत कम जोखिम है।",
+      kn: "ಗಾಳಿಯ ಗುಣಮಟ್ಟ ತೃಪ್ತಿಕರವಾಗಿದೆ, ಮತ್ತು ವಾಯು ಮಾಲಿನ್ಯವು ಕಡಿಮೆ ಅಥವಾ ಯಾವುದೇ ಅಪಾಯವನ್ನುಂಟುಮಾಡುವುದಿಲ್ಲ.",
+      ta: "காற்றின் தரம் திருப்திகரமாக உள்ளது, மேலும் காற்று மாசுபாடு குறைந்த அல்லது ஆபத்தை ஏற்படுத்தாது."
+    },
+    precautions: {
+      en: ["No precautions needed. Great day for outdoor activities.", "Keep windows open to maintain ventilation."],
+      hi: ["किसी सावधानी की आवश्यकता नहीं है। बाहरी गतिविधियों के लिए बहुत अच्छा दिन है।", "कमरों में वेंटिलेशन बनाए रखने के लिए खिड़कियाँ खुली रखें।"],
+      kn: ["ಯಾವ ಮುನ್ನೆಚ್ಚರಿಕೆಯ ಅಗತ್ಯವಿಲ್ಲ. ಹೊರಾಂಗಣ ಚಟುವಟಿಕೆಗಳಿಗೆ ಉತ್ತಮ ದಿನ.", "ಗಾಳಿ ಸಂಚಾರಕ್ಕಾಗಿ ಕಿಟಕಿಗಳನ್ನು ತೆರೆದಿಡಿ."],
+      ta: ["முன்னெச்சரிக்கைகள் தேவையில்லை. வெளிப்புற நடவடிக்கைகளுக்கு சிறந்த நாள்.", "காற்றோட்டத்தை பராமரிக்க ஜன்னல்களை திறந்து வைக்கவும்."]
+    }
   },
   {
     min: 51,
     max: 100,
-    category_en: "Satisfactory",
-    category_hi: "संतोषजनक",
-    message_en: "Air quality is acceptable; however, there may be a moderate concern for sensitive individuals.",
-    message_hi: "वायु की गुणवत्ता स्वीकार्य है; हालांकि, संवेदनशील लोगों के लिए हल्की चिंता हो सकती है।",
-    precautions_en: [
-      "Sensitive people (e.g. with asthma) should consider reducing heavy outdoor exertion.",
-      "Monitor air quality changes if you suffer from respiratory issues."
-    ],
-    precautions_hi: [
-      "संवेदनशील लोगों (जैसे अस्थमा से पीड़ित) को भारी बाहरी परिश्रम कम करने पर विचार करना चाहिए।",
-      "यदि आप सांस की बीमारी से पीड़ित हैं, तो वायु गुणवत्ता में बदलावों पर नजर रखें।"
-    ]
+    category: { en: "Satisfactory", hi: "संतोषजनक", kn: "ತೃಪ್ತಿಕರ", ta: "திருப்திகரம்" },
+    message: {
+      en: "Air quality is acceptable; however, there may be a moderate concern for sensitive individuals.",
+      hi: "वायु की गुणवत्ता स्वीकार्य है; हालांकि, संवेदनशील लोगों के लिए हल्की चिंता हो सकती है।",
+      kn: "ಗಾಳಿಯ ಗುಣಮಟ್ಟ ಸ್ವೀಕಾರಾರ್ಹವಾಗಿದೆ; ಆದಾಗ್ಯೂ ಸೂಕ್ಷ್ಮ ವ್ಯಕ್ತಿಗಳಿಗೆ ಸ್ವಲ್ಪ ಕಾಳಜಿ ಇರಬಹುದು.",
+      ta: "காற்றின் தரம் ஏற்றுக்கொள்ளத்தக்கது; இருப்பினும், உணர்திறன் கொண்ட நபர்களுக்கு மிதமான கவலை இருக்கலாம்."
+    },
+    precautions: {
+      en: ["Sensitive individuals should consider reducing heavy outdoor exertion.", "Monitor air quality changes if you suffer from respiratory issues."],
+      hi: ["संवेदनशील लोगों को भारी बाहरी परिश्रम कम करने पर विचार करना चाहिए।", "यदि आप सांस की बीमारी से पीड़ित हैं, तो वायु गुणवत्ता में बदलावों पर नजर रखें।"],
+      kn: ["ಸೂಕ್ಷ್ಮ ವ್ಯಕ್ತಿಗಳು ಹೊರಾಂಗಣ ಶ್ರಮವನ್ನು ಕಡಿಮೆ ಮಾಡುವುದನ್ನು ಪರಿಗಣಿಸಬೇಕು.", "ಉಸಿರಾಟದ ತೊಂದರೆ ಇದ್ದರೆ ಗಾಳಿಯ ಗುಣಮಟ್ಟವನ್ನು ಗಮನಿಸಿ."],
+      ta: ["உணர்திறன் கொண்ட நபர்கள் வெளிப்புற உடற்பயிற்சியைக் குறைக்க வேண்டும்.", "உடலநலப் பிரச்சினைகள் இருந்தால் காற்றின் தரத்தைக் கண்காணிக்கவும்."]
+    }
   },
   {
     min: 101,
     max: 200,
-    category_en: "Moderate",
-    category_hi: "सामान्य रूप से प्रदूषित",
-    message_en: "Members of sensitive groups may experience health effects. The general public is less likely to be affected.",
-    message_hi: "संवेदनशील समूहों के लोगों को स्वास्थ्य प्रभाव महसूस हो सकते हैं। आम लोगों के प्रभावित होने की संभावना कम है।",
-    precautions_en: [
-      "Sensitive groups should limit prolonged outdoor activities.",
-      "Take more breaks during outdoor activities if symptoms arise."
-    ],
-    precautions_hi: [
-      "संवेदनशील समूहों को लंबे समय तक बाहरी गतिविधियों को सीमित करना चाहिए।",
-      "लक्षण उत्पन्न होने पर बाहरी गतिविधियों के दौरान अधिक विश्राम लें।"
-    ]
+    category: { en: "Moderate", hi: "सामान्य रूप से प्रदूषित", kn: "ಮಿಶ್ರಣ", ta: "மிதமான" },
+    message: {
+      en: "Members of sensitive groups may experience health effects. The general public is less likely to be affected.",
+      hi: "संवेदनशील समूहों के लोगों को स्वास्थ्य प्रभाव महसूस हो सकते हैं। आम लोगों के प्रभावित होने की संभावना कम है।",
+      kn: "ಸೂಕ್ಷ್ಮ ಗುಂಪುಗಳ ಸದಸ್ಯರು ಆರೋಗ್ಯ ಪರಿಣಾಮಗಳನ್ನು ಅನುಭವಿಸಬಹುದು.",
+      ta: "உணர்திறன் கொண்ட குழுக்களின் உறுப்பினர்கள் சுகாதார பாதிப்புகளை சந்திக்கலாம்."
+    },
+    precautions: {
+      en: ["Sensitive groups should limit prolonged outdoor activities.", "Take breaks during outdoor exertion."],
+      hi: ["संवेदनशील समूहों को लंबे समय तक बाहरी गतिविधियों को सीमित करना चाहिए।", "बाहरी गतिविधियों के दौरान विश्राम लें।"],
+      kn: ["ಸೂಕ್ಷ್ಮ ಗುಂಪುಗಳು ಹೊರಾಂಗಣ ಚಟುವಟಿಕೆಗಳನ್ನು ಮಿತಿಗೊಳಿಸಬೇಕು.", "ಹೊರಾಂಗಣ ಚಟುವಟಿಕೆಗಳ ಸಮಯದಲ್ಲಿ ವಿರಾಮ ತೆಗೆದುಕೊಳ್ಳಿ."],
+      ta: ["உணர்திறன் கொண்ட குழுக்கள் வெளிப்புற நடவடிக்கைகளைக் கட்டுப்படுத்த வேண்டும்.", "வெளிப்புற பயிற்சியின் போது இடைவேளை எடுக்கவும்."]
+    }
   },
   {
     min: 201,
     max: 300,
-    category_en: "Poor",
-    category_hi: "खराब",
-    message_en: "Everyone may begin to experience health effects; members of sensitive groups may experience more serious health effects.",
-    message_hi: "हर किसी को स्वास्थ्य प्रभाव महसूस होना शुरू हो सकता है; संवेदनशील समूहों को अधिक गंभीर प्रभाव हो सकते हैं।",
-    precautions_en: [
-      "Wear protective masks (N95 or equivalent) when outdoors.",
-      "Avoid strenuous outdoor activities, especially children and seniors.",
-      "Close windows to avoid outdoor dust and smog."
-    ],
-    precautions_hi: [
-      "बाहर जाते समय सुरक्षात्मक मास्क (N95 या समकक्ष) पहनें।",
-      "भारी बाहरी गतिविधियों से बचें, विशेष रूप से बच्चे और बुजुर्ग व्यक्ति।",
-      "बाहरी धूल और धुंध से बचने के लिए खिड़कियाँ बंद रखें।"
-    ]
+    category: { en: "Poor", hi: "खराब", kn: "ಕಳಪೆ", ta: "மோசம்" },
+    message: {
+      en: "Everyone may begin to experience health effects; members of sensitive groups may experience more serious health effects.",
+      hi: "हर किसी को स्वास्थ्य प्रभाव महसूस होना शुरू हो सकता है; संवेदनशील समूहों को अधिक गंभीर प्रभाव हो सकते हैं।",
+      kn: "ಗಾಳಿಯ ಗುಣಮಟ್ಟ ಕಳಪೆಯಾಗಿದೆ. ಸೂಕ್ಷ್ಮ ವ್ಯಕ್ತಿಗಳು ಹೊರಾಂಗಣ ಶ್ರಮವನ್ನು ಕಡಿಮೆ ಮಾಡಬೇಕು.",
+      ta: "காற்றின் தரம் மோசமாக உள்ளது. உணர்திறன் கொண்ட நபர்கள் வெளிப்புற உடற்பயிற்சியைக் குறைக்க வேண்டும்."
+    },
+    precautions: {
+      en: ["Limit outdoor exercise during peak pollution hours.", "Wear an N95 mask if traveling along busy traffic corridors.", "Keep indoor windows closed when outside air feels smoky."],
+      hi: ["प्रदूषण के चरम घंटों के दौरान बाहरी व्यायाम सीमित करें।", "व्यस्त यातायात गलियारों में यात्रा करते समय N95 मास्क पहनें।", "जब बाहर हवा धुएँदार महसूस हो तो घर की खिड़कियाँ बंद रखें।"],
+      kn: ["ಗರಿಷ್ಠ ಮಾಲಿನ್ಯದ ಅವಧಿಯಲ್ಲಿ ಹೊರಾಂಗಣ ವ್ಯಾಯಾಮವನ್ನು ಮಿತಿಗೊಳಿಸಿ.", "ನಿರತ ಸಂಚಾರ ಮಾರ್ಗಗಳಲ್ಲಿ ಪ್ರಯಾಣಿಸುವಾಗ N95 ಮಾಸ್ಕ್ ಧರಿಸಿ.", "ಹೊರಗಿನ ಗಾಳಿಯು ಹೊಗೆಯಿಂದ ಕೂಡಿದಾಗ ಮನೆಯ ಕಿಟಕಿಗಳನ್ನು ಮುಚ್ಚಿಡಿ."],
+      ta: ["அதிக மாசு நேரங்களில் வெளிப்புற உடற்பயிற்சியைக் கட்டுப்படுத்தவும்.", "பரபரப்பான போக்குவரத்து பாதைகளில் பயணிக்கும் போது N95 மாஸ்க் அணியவும்.", "வெளியே புகை மூட்டமாக இருக்கும் போது வீட்டு ஜன்னல்களை மூடி வைக்கவும்."]
+    }
   },
   {
     min: 301,
     max: 400,
-    category_en: "Very Poor",
-    category_hi: "बहुत खराब",
-    message_en: "Health alert: everyone may experience more serious health effects. Immediate exposure reduction is advised.",
-    message_hi: "स्वास्थ्य चेतावनी: सभी को गंभीर स्वास्थ्य प्रभाव महसूस हो सकते हैं। बाहरी संपर्क तुरंत कम करने की सलाह दी जाती है।",
-    precautions_en: [
-      "Sensitive groups should remain indoors. General population should avoid outdoor activities.",
-      "Wear N95 masks if outdoor travel is mandatory.",
-      "Use air purifiers indoors and close all windows.",
-      "Avoid burning any dry leaves or waste nearby."
-    ],
-    precautions_hi: [
-      "संवेदनशील समूह घर के अंदर ही रहें। आम लोगों को बाहरी गतिविधियों से बचना चाहिए।",
-      "बाहरी यात्रा अनिवार्य होने पर N95 मास्क पहनें।",
-      "कमरे में एयर प्यूरीफायर चलाएं और खिड़कियाँ बंद रखें।",
-      "आसपास सूखे पत्ते या कचरा जलाने से बचें।"
-    ]
+    category: { en: "Very Poor", hi: "बहुत खराब", kn: "ಬಹಳ ಕಳಪೆ", ta: "மிகவும் மோசம்" },
+    message: {
+      en: "Health alert: everyone may experience more serious health effects. Immediate exposure reduction is advised.",
+      hi: "स्वास्थ्य चेतावनी: सभी को गंभीर स्वास्थ्य प्रभाव महसूस हो सकते हैं। बाहरी संपर्क तुरंत कम करने की सलाह दी जाती है।",
+      kn: "ಆರೋಗ್ಯ ಎಚ್ಚರಿಕೆ: ಪ್ರತಿಯೊಬ್ಬರೂ ಹೆಚ್ಚು ತೀವ್ರವಾದ ಆರೋಗ್ಯ ಪರಿಣಾಮಗಳನ್ನು ಅನುಭವಿಸಬಹುದು.",
+      ta: "சுகாதார எச்சரிக்கை: அனைவரும் மிகவும் கடுமையான சுகாதார விளைவுகளை சந்திக்க நேரிடும்."
+    },
+    precautions: {
+      en: ["Sensitive groups should remain indoors. General population should avoid outdoor activities.", "Wear N95 masks if outdoor travel is mandatory.", "Use air purifiers indoors and close all windows.", "Avoid burning any dry leaves or waste nearby."],
+      hi: ["संवेदनशील समूह घर के अंदर ही रहें। आम लोगों को बाहरी गतिविधियों से बचना चाहिए।", "बाहरी यात्रा अनिवार्य होने पर N95 मास्क पहनें।", "कमरे में एयर प्यूरीफायर चलाएं और खिड़कियाँ बंद रखें।", "आसपास सूखे पत्ते या कचरा जलाने से बचें।"],
+      kn: ["ಸೂಕ್ಷ್ಮ ಗುಂಪುಗಳು ಮನೆಯೊಳಗೆ ಇರಬೇಕು.", "ಹೊರಾಂಗಣ ಪ್ರಯಾಣ ಕಡ್ಡಾಯವಾಗಿದ್ದರೆ N95 ಮಾಸ್ಕ್ ಧರಿಸಿ.", "ಮನೆಯೊಳಗೆ ಏರ್ ಪ್ಯೂರಿಫೈಯರ್ ಬಳಸಿ.", "ಕಸ ಸುಡುವುದನ್ನು ತಡೆಯಿರಿ."],
+      ta: ["உணர்திறன் கொண்ட குழுக்கள் வீட்டிற்குள் இருக்க வேண்டும்.", "வெளிப்புற பயணம் கட்டாயமாக இருந்தால் N95 மாஸ்க் அணியுங்கள்.", "வீட்டு காற்று சுத்திகரிப்பான்களைப் பயன்படுத்தவும்.", "குப்பைகளை எரிப்பதைத் தவிர்க்கவும்."]
+    }
   },
   {
     min: 401,
     max: 9999,
-    category_en: "Severe",
-    category_hi: "गंभीर",
-    message_en: "Emergency conditions. Health warnings of emergency levels. General population is severely affected.",
-    message_hi: "आपातकालीन स्थिति। स्वास्थ्य पर गंभीर प्रभाव। आम आबादी गंभीर रूप से प्रभावित होती है।",
-    precautions_en: [
-      "Avoid all outdoor exertion and physical activities.",
-      "General public must remain indoors. Sensitive individuals must stay in clean air rooms.",
-      "Keep all windows and doors tightly shut; run indoor air purifiers continuously.",
-      "Wear well-fitted N95/N99 masks if stepping out is absolutely unavoidable."
-    ],
-    precautions_hi: [
-      "सभी प्रकार के बाहरी शारीरिक परिश्रम और गतिविधियों से बचें।",
-      "आम जनता घर के अंदर ही रहे। संवेदनशील लोग साफ हवा वाले कमरों में रहें।",
-      "सभी खिड़कियाँ और दरवाजे कसकर बंद रखें; कमरे में लगातार एयर प्यूरीफायर चलाएं।",
-      "यदि बाहर जाना बिल्कुल अपरिहार्य हो तो फिटेड N95/N99 मास्क पहनें।"
-    ]
+    category: { en: "Severe", hi: "गंभीर", kn: "ಗಂಭೀರ", ta: "கடும்" },
+    message: {
+      en: "Emergency conditions. Health warnings of emergency levels. General population is severely affected.",
+      hi: "आपातकालीन स्थिति। स्वास्थ्य पर गंभीर प्रभाव। आम आबादी गंभीर रूप से प्रभावित होती है।",
+      kn: "ತುರ್ತು ಪರಿಸ್ಥಿತಿಗಳು. ಗಂಭೀರ ಆರೋಗ್ಯ ಪರಿಣಾಮಗಳು.",
+      ta: "அவசர நிலைகள். கடுமையான சுகாதார பாதிப்புகள்."
+    },
+    precautions: {
+      en: ["Avoid all outdoor exertion and physical activities.", "General public must remain indoors. Sensitive individuals must stay in clean air rooms.", "Keep all windows and doors tightly shut; run indoor air purifiers continuously.", "Wear well-fitted N95/N99 masks if stepping out is absolutely unavoidable."],
+      hi: ["सभी प्रकार के बाहरी शारीरिक परिश्रम और गतिविधियों से बचें।", "आम जनता घर के अंदर ही रहे। संवेदनशील लोग साफ हवा वाले कमरों में रहें।", "सभी खिड़कियाँ और दरवाजे कसकर बंद रखें; कमरे में लगातार एयर प्यूरीफायर चलाएं।", "यदि बाहर जाना बिल्कुल अपरिहार्य हो तो फिटेड N95/N99 मास्क पहनें।"],
+      kn: ["ಎಲ್ಲಾ ಹೊರಾಂಗಣ ಶ್ರಮವನ್ನು ತಪ್ಪಿಸಿ.", "ಸಾರ್ವಜನಿಕರು ಮನೆಯೊಳಗೆ ಇರಬೇಕು.", "ಕಿಟಕಿಗಳನ್ನು ಮುಚ್ಚಿಡಿ.", "N95 ಮಾಸ್ಕ್ ಧರಿಸಿ."],
+      ta: ["அனைத்து வெளிப்புற உடற்பயிற்சிகளையும் தவிர்க்கவும்.", "பொதுமக்கள் வீட்டிற்குள் இருக்க வேண்டும்.", "ஜன்னல்களை மூடி வைக்கவும்.", "N95 மாஸ்க் அணியுங்கள்."]
+    }
   }
 ];
 
 const LOCAL_SOURCE_PRECAUTIONS = {
   agricultural_burning: {
     en: "Avoid areas downwind of agricultural fields/stubble burning to prevent acute smoke inhalation.",
-    hi: "तीव्र धुएँ के सांस में जाने से बचने के लिए फसल अवशेष जलाने वाली जगहों से अनुकूल हवा की दिशा में जाने से बचें।"
+    hi: "तीव्र धुएँ के सांस में जाने से बचने के लिए फसल अवशेष जलाने वाली जगहों से अनुकूल हवा की दिशा में जाने से बचें।",
+    kn: "ತೀವ್ರ ಹೊಗೆಯನ್ನು ತಡೆಗಟ್ಟಲು ಕೃಷಿ ಸುಡುವ ಪ್ರದೇಶಗಳಿಂದ ದೂರವಿರಿ.",
+    ta: "புகையை சுவாசிப்பதைத் தவிர்க்க விவசாய நிலங்களில் இருந்து தள்ளி இருங்கள்."
   },
   traffic: {
     en: "Avoid walking or exercising near high-traffic corridors during peak commute hours.",
-    hi: "भीड़भाड़ वाले समय में व्यस्त सड़कों या मुख्य मार्गों के पास टहलने या व्यायाम करने से बचें।"
+    hi: "भीड़भाड़ वाले समय में व्यस्त सड़कों या मुख्य मार्गों के पास टहलने या व्यायाम करने से बचें।",
+    kn: "ಸಂಚಾರ ಗರಿಷ್ಠ ಅವಧಿಯಲ್ಲಿ ರಸ್ತೆಬದಿಯ ವ್ಯಾಯಾಮವನ್ನು ತಪ್ಪಿಸಿ.",
+    ta: "அதிக போக்குவரத்து நேரங்களில் சாலை யோரம் நடப்பதை தவிர்க்கவும்."
   },
   industrial: {
     en: "Ensure indoor ventilation systems have high-efficiency particulate air (HEPA) filters if near industrial zones.",
-    hi: "औद्योगिक क्षेत्रों के पास होने पर इनडोर वेंटिलेशन सिस्टम में उच्च दक्षता वाले कण हवा (HEPA) फिल्टर लगाना सुनिश्चित करें।"
+    hi: "औद्योगिक क्षेत्रों के पास होने पर इनडोर वेंटिलेशन सिस्टम में उच्च दक्षता वाले कण हवा (HEPA) फिल्टर लगाना सुनिश्चित करें।",
+    kn: "ಔದ್ಯೋಗಿಕ ವಲಯದ ಬಳಿ ಇದ್ದರೆ HEPA ಫಿಲ್ಟರ್ ಬಳಸಿ.",
+    ta: "தொழில்துறை மண்டலங்களுக்கு அருகில் இருந்தால் HEPA ஃபில்டர்களை பயன்படுத்தவும்."
   }
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 function getAqiStyle(aqi) {
-  if (aqi <= 50)  return { label_en: 'Good',          label_hi: 'अच्छा',              color: 'var(--aqi-good)', bg: 'rgba(110, 231, 168, 0.08)' };
-  if (aqi <= 100) return { label_en: 'Satisfactory',  label_hi: 'संतोषजनक',           color: 'var(--aqi-satisfactory)', bg: 'rgba(168, 217, 110, 0.08)' };
-  if (aqi <= 200) return { label_en: 'Moderate',      label_hi: 'सामान्य रूप से प्रदूषित', color: 'var(--aqi-moderate)', bg: 'rgba(232, 210, 110, 0.08)' };
-  if (aqi <= 300) return { label_en: 'Poor',          label_hi: 'खराब',               color: 'var(--aqi-poor)', bg: 'rgba(232, 168, 79, 0.08)' };
-  if (aqi <= 400) return { label_en: 'Very Poor',     label_hi: 'बहुत खराब',           color: 'var(--aqi-very-poor)', bg: 'rgba(232, 101, 79, 0.08)' };
-  return { label_en: 'Severe', label_hi: 'गंभीर', color: 'var(--aqi-severe)', bg: 'rgba(122, 46, 61, 0.12)' };
+  if (aqi <= 50)  return { color: 'var(--aqi-good)', bg: 'rgba(110, 231, 168, 0.08)' };
+  if (aqi <= 100) return { color: 'var(--aqi-satisfactory)', bg: 'rgba(168, 217, 110, 0.08)' };
+  if (aqi <= 200) return { color: 'var(--aqi-moderate)', bg: 'rgba(232, 210, 110, 0.08)' };
+  if (aqi <= 300) return { color: 'var(--aqi-poor)', bg: 'rgba(232, 168, 79, 0.08)' };
+  if (aqi <= 400) return { color: 'var(--aqi-very-poor)', bg: 'rgba(232, 101, 79, 0.08)' };
+  return { color: 'var(--aqi-severe)', bg: 'rgba(122, 46, 61, 0.12)' };
+}
+
+function getAdvisoryForLang(lang, aqi, src) {
+  let band = LOCAL_AQI_BANDS[LOCAL_AQI_BANDS.length - 1];
+  for (let b of LOCAL_AQI_BANDS) {
+    if (aqi >= b.min && aqi <= b.max) {
+      band = b;
+      break;
+    }
+  }
+
+  let category = band.category[lang] || band.category.en;
+  let message = band.message[lang] || band.message.en;
+  let precautions = band.precautions[lang] ? [...band.precautions[lang]] : [...band.precautions.en];
+
+  if (LOCAL_SOURCE_PRECAUTIONS[src]) {
+    const extra = LOCAL_SOURCE_PRECAUTIONS[src][lang] || LOCAL_SOURCE_PRECAUTIONS[src].en;
+    precautions.push(extra);
+  }
+
+  return { category, message, precautions };
 }
 
 export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecastAqi, apiBase }) {
-  const [language, setLanguage] = useState('en'); // 'en' | 'hi'
-  const [advisory, setAdvisory] = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [isLlm, setIsLlm]       = useState(false);
-  const [enableLlm, setEnableLlm] = useState(false); // default to false for instant local mode
+  const [language, setLanguage] = useState('en'); // 'en' | 'hi' | 'kn' | 'ta'
 
   const baselineAqi = Math.round(currentAqi || 300);
   const forecastVal = forecastAqi ? Math.round(forecastAqi) : null;
   const source      = primaryCause || 'traffic';
   const aqiStyle    = getAqiStyle(baselineAqi);
 
-  useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
+  const [advisory, setAdvisory] = useState(() => getAdvisoryForLang('en', baselineAqi, source));
 
+  // Update advisory instantly when language, baselineAqi, or source changes
+  useEffect(() => {
+    // Synchronous instant update
+    setAdvisory(getAdvisoryForLang(language, baselineAqi, source));
+
+    let isMounted = true;
     async function fetchAdvisory() {
       try {
         const url =
@@ -177,10 +194,9 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
           `?current_aqi=${baselineAqi}` +
           (forecastVal ? `&forecasted_aqi=${forecastVal}` : '') +
           `&primary_cause=${source}` +
-          `&language=${language}` +
-          `&enable_llm=${enableLlm}`;
+          `&language=${language}`;
 
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(1200) });
         if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
         const data = await res.json();
 
@@ -189,42 +205,10 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
             category: data.aqi_category,
             message: data.health_message,
             precautions: data.recommended_precautions,
-            llm_error: data.llm_error,
           });
-          setIsLlm(!data.llm_error);
-          setLoading(false);
         }
       } catch (err) {
-        console.warn("Advisory API failed, running local fallback: ", err);
-        // Local fallback generation
-        if (isMounted) {
-          let band = LOCAL_AQI_BANDS[LOCAL_AQI_BANDS.length - 1];
-          for (let b of LOCAL_AQI_BANDS) {
-            if (baselineAqi >= b.min && baselineAqi <= b.max) {
-              band = b;
-              break;
-            }
-          }
-
-          let category = language === 'hi' ? band.category_hi : band.category_en;
-          let message = language === 'hi' ? band.message_hi : band.message_en;
-          let precautions = language === 'hi' ? [...band.precautions_hi] : [...band.precautions_en];
-
-          if (LOCAL_SOURCE_PRECAUTIONS[source]) {
-            precautions.push(
-              language === 'hi' ? LOCAL_SOURCE_PRECAUTIONS[source].hi : LOCAL_SOURCE_PRECAUTIONS[source].en
-            );
-          }
-
-          setAdvisory({
-            category,
-            message,
-            precautions,
-            llm_error: true,
-          });
-          setIsLlm(false);
-          setLoading(false);
-        }
+        // Keep synchronous translation fallback
       }
     }
 
@@ -233,217 +217,163 @@ export default function CitizenAdvisoryPanel({ currentAqi, primaryCause, forecas
     return () => {
       isMounted = false;
     };
-  }, [baselineAqi, forecastVal, source, language, enableLlm, apiBase]);
+  }, [baselineAqi, forecastVal, source, language, apiBase]);
+
+  const handleLanguageChange = (langCode) => {
+    setLanguage(langCode);
+    setAdvisory(getAdvisoryForLang(langCode, baselineAqi, source));
+  };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Left Card: Status Summary */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ShieldAlert size={18} color="var(--color-primary)" />
           <div>
-            <h2 style={{ fontSize: '15px', fontWeight: 700 }}>Citizen Advisory</h2>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Localized health warnings and protective guide</p>
+            <h2 style={{ fontSize: '15px', fontWeight: 700 }}>Citizen Health Risk Advisory</h2>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Actionable public health precautions & exposure reduction guidance</p>
           </div>
         </div>
 
-        {/* Big Status Badge */}
-        <div
-          className="glass-panel"
-          style={{
-            background: aqiStyle.bg,
-            border: `1px solid ${aqiStyle.color}`,
-            borderRadius: '12px',
-            padding: '24px',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: `0 0 20px ${aqiStyle.color}15`,
-          }}
-        >
-          <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '1px' }}>
-            SEVERITY STATUS
-          </span>
-          <span style={{ fontSize: '24px', fontWeight: 800, color: aqiStyle.color }}>
-            {language === 'hi' ? aqiStyle.label_hi : aqiStyle.label_en.toUpperCase()}
-          </span>
-          <div style={{ fontSize: '36px', fontWeight: 900, color: '#fff', margin: '4px 0' }}>
-            AQI {baselineAqi}
-          </div>
-          {forecastVal && (
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span>24h Forecast:</span>
-              <span style={{ color: getAqiStyle(forecastVal).color, fontWeight: 700 }}>{forecastVal}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Details Card */}
-        <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Primary Source:</span>
-            <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
-              {source.replace('_', ' ').toUpperCase()}
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Advisory Engine:</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: isLlm ? 'var(--color-success)' : 'var(--color-primary)' }}>
-              {isLlm ? <Sparkles size={11} /> : <Info size={11} />}
-              <strong>{isLlm ? "GEN-AI SUMMARY" : "LOCAL RULE-BASED"}</strong>
-            </span>
-          </div>
-        </div>
-
-        {/* Language selector toggle */}
-        <div className="glass-panel" style={{ padding: '6px', display: 'flex', gap: '6px', borderRadius: '8px' }}>
-          <button
-            onClick={() => setLanguage('en')}
-            style={{
-              flex: 1,
-              padding: '6px',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: language === 'en' ? 700 : 500,
-              background: language === 'en' ? 'rgba(0, 240, 255, 0.12)' : 'transparent',
-              color: language === 'en' ? '#fff' : 'var(--text-muted)',
-              transition: 'all 0.2s',
-            }}
-          >
-            ENGLISH
-          </button>
-          <button
-            onClick={() => setLanguage('hi')}
-            style={{
-              flex: 1,
-              padding: '6px',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: language === 'hi' ? 700 : 500,
-              background: language === 'hi' ? 'rgba(0, 240, 255, 0.12)' : 'transparent',
-              color: language === 'hi' ? '#fff' : 'var(--text-muted)',
-              transition: 'all 0.2s',
-            }}
-          >
-            हिंदी / HINDI
-          </button>
-        </div>
-
-        {/* AI Generator Toggle */}
-        <div className="glass-panel" style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '8px' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <Sparkles size={12} color={enableLlm ? 'var(--color-success)' : 'var(--text-dark)'} />
-            <span style={{ fontWeight: 600 }}>AI ADVISORY (LLM)</span>
-          </span>
-          <button
-            onClick={() => setEnableLlm(!enableLlm)}
-            style={{
-              background: enableLlm ? 'var(--color-success)' : 'rgba(255,255,255,0.06)',
-              border: 'none',
-              borderRadius: '20px',
-              width: '36px',
-              height: '18px',
-              position: 'relative',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <div
+        {/* Language selector toggle (EN, HI, KN, TA) */}
+        <div className="glass-panel" style={{ padding: '4px', display: 'flex', gap: '4px', borderRadius: '8px' }}>
+          {[
+            { code: 'en', label: 'EN' },
+            { code: 'hi', label: 'हिंदी' },
+            { code: 'kn', label: 'ಕನ್ನಡ' },
+            { code: 'ta', label: 'தமிழ்' }
+          ].map((item) => (
+            <button
+              key={item.code}
+              onClick={() => handleLanguageChange(item.code)}
               style={{
-                width: '12px',
-                height: '12px',
-                borderRadius: '50%',
-                background: '#fff',
-                position: 'absolute',
-                left: enableLlm ? '20px' : '4px',
-                transition: 'left 0.2s',
+                padding: '5px 12px',
+                borderRadius: '6px',
+                border: language === item.code ? '1px solid rgba(0, 240, 255, 0.4)' : '1px solid transparent',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: language === item.code ? 700 : 500,
+                background: language === item.code ? 'rgba(0, 240, 255, 0.15)' : 'transparent',
+                color: language === item.code ? '#fff' : 'var(--text-muted)',
+                transition: 'all 0.2s',
               }}
-            />
-          </button>
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Right Column: Advisory Details */}
-      <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center' }}>
-        {loading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-            {/* Loading skeletons */}
-            <div style={{ height: '20px', width: '40%', background: 'var(--border-light)', borderRadius: '4px', className: 'pulse-glow' }}></div>
-            <div style={{ height: '60px', width: '100%', background: 'var(--border-light)', borderRadius: '6px', className: 'pulse-glow' }}></div>
-            <div style={{ height: '20px', width: '30%', background: 'var(--border-light)', borderRadius: '4px', className: 'pulse-glow', marginTop: '10px' }}></div>
-            <div style={{ height: '30px', width: '100%', background: 'var(--border-light)', borderRadius: '6px', className: 'pulse-glow' }}></div>
-            <div style={{ height: '30px', width: '100%', background: 'var(--border-light)', borderRadius: '6px', className: 'pulse-glow' }}></div>
-          </div>
-        ) : (
-          <>
-            {/* Warning Message Card */}
+      {/* Main advisory grid */}
+      {advisory && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+          
+          {/* Left AQI Severity Card */}
+          <div
+            className="glass-panel"
+            style={{
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              justify: 'center',
+              alignItems: 'center',
+              gap: '12px',
+              background: advisory.category ? aqiStyle.bg : 'rgba(255,255,255,0.02)',
+              border: `1px solid ${aqiStyle.color}30`,
+              borderRadius: '12px',
+            }}
+          >
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.5px' }}>
+              SEVERITY LEVEL
+            </span>
             <div
               style={{
-                borderLeft: `4px solid ${aqiStyle.color}`,
-                background: 'rgba(255, 255, 255, 0.01)',
-                padding: '16px',
-                borderRadius: '0 8px 8px 0',
+                fontSize: '22px',
+                fontWeight: 900,
+                color: aqiStyle.color,
+                textTransform: 'uppercase',
+                textAlign: 'center'
               }}
             >
-              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <AlertTriangle size={14} color={aqiStyle.color} />
-                {language === 'hi' ? "स्वास्थ्य चेतावनी" : "HEALTH WARNING"}
-              </h3>
-              <p style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: '1.6' }}>
-                {advisory?.message}
+              {advisory.category}
+            </div>
+
+            <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block' }}>BASELINE AQI</span>
+                <span style={{ fontSize: '20px', fontWeight: 800, color: aqiStyle.color }}>{baselineAqi}</span>
+              </div>
+              {forecastVal && (
+                <div style={{ textAlign: 'center', borderLeft: '1px solid var(--border-light)', paddingLeft: '16px' }}>
+                  <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block' }}>24H FORECAST</span>
+                  <span style={{ fontSize: '20px', fontWeight: 800, color: getAqiStyle(forecastVal).color }}>{forecastVal}</span>
+                </div>
+              )}
+            </div>
+
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'center' }}>
+              Dominant Cause: <strong style={{ color: '#fff' }}>{source.replace('_', ' ').toUpperCase()}</strong>
+            </div>
+          </div>
+
+          {/* Right Precautions & Message Box */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            
+            {/* Health Message Alert Banner */}
+            <div
+              className="glass-panel"
+              style={{
+                padding: '16px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                borderLeft: `4px solid ${aqiStyle.color}`,
+                borderRadius: '8px',
+              }}
+            >
+              <AlertTriangle size={18} color={aqiStyle.color} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <p style={{ fontSize: '12.5px', color: '#fff', lineHeight: 1.5, fontWeight: 500 }}>
+                {advisory.message}
               </p>
             </div>
 
-            {/* Precautions list */}
-            <div>
-              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#fff', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Languages size={14} color="var(--color-primary)" />
-                {language === 'hi' ? "अनुशंसित सावधानियां" : "RECOMMENDED PRECAUTIONS"}
-              </h3>
-              
+            {/* Recommended Precautions List */}
+            <div className="glass-panel" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle2 size={14} color="var(--color-primary)" />
+                <span>RECOMMENDED PUBLIC HEALTH PRECAUTIONS</span>
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {advisory?.precautions.map((precaution, idx) => (
+                {advisory.precautions.map((prec, i) => (
                   <div
-                    key={idx}
+                    key={i}
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '10px',
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid var(--border-light)',
-                      borderRadius: '8px',
-                      padding: '12px',
                       fontSize: '11.5px',
                       color: 'var(--text-main)',
-                      lineHeight: '1.4',
+                      lineHeight: 1.5,
+                      background: 'rgba(255,255,255,0.01)',
+                      border: '1px solid var(--border-light)',
+                      padding: '10px 12px',
+                      borderRadius: '6px',
                     }}
                   >
-                    <CheckCircle2 size={14} color="var(--color-primary)" style={{ marginTop: '2px', flexShrink: 0 }} />
-                    <span>{precaution}</span>
+                    <span style={{ color: 'var(--color-primary)', fontWeight: 800 }}>{i + 1}.</span>
+                    <span>{prec}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Disclaimer disclaimer */}
-            <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '12px', fontSize: '9.5px', color: 'var(--text-dark)', lineHeight: '1.4' }}>
-              <span style={{ fontWeight: 600 }}>{language === 'hi' ? "घोषणा:" : "DISCLAIMER:"} </span>
-              {language === 'hi'
-                ? "यह एक सांकेतिक स्वास्थ्य सलाह है, जो मानक CPCB गंभीरता श्रेणियों के अनुसार तैयार की गई है। यह एक नैदानिक चिकित्सा प्रोटोकॉल नहीं है।"
-                : "This is an indicative health advisory, calibrated with standard CPCB severity bands. Not a clinical medical protocol."}
-            </div>
-          </>
-        )}
-      </div>
+          </div>
+
+        </div>
+      )}
 
     </div>
   );

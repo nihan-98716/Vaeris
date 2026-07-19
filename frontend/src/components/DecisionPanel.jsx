@@ -1,18 +1,34 @@
 import { useState, useEffect } from 'react';
 import { Users, DollarSign, Timer, AlertTriangle, Cpu, Heart } from 'lucide-react';
 
+const DEFAULT_DECISION_RESULTS = {
+  selected_interventions: [
+    { id: "stubble_burning_enforcement", name: "Enforce Stubble Burning Ban", cost: 1500, inspectors_required: 4, travel_time_hours: 2.5, aqi_reduction: 45, population_affected: 800000, health_benefit: 374, description: "Deploy enforcement squads to stop agricultural field burning." },
+    { id: "halt_construction", name: "Halt Construction Activities", cost: 800, inspectors_required: 2, travel_time_hours: 1.0, aqi_reduction: 20, population_affected: 500000, health_benefit: 104, description: "Issue stop-work orders for unmitigated dust sites." },
+    { id: "road_sprinklers", name: "Deploy Road Sprinklers & Anti-Smog Guns", cost: 500, inspectors_required: 1, travel_time_hours: 0.5, aqi_reduction: 12, population_affected: 300000, health_benefit: 37, description: "Operate water mist trucks along high-dust corridors." }
+  ],
+  total_aqi_reduction: 77,
+  total_cost: 2800,
+  total_inspectors_used: 7,
+  total_population_affected: 1600000,
+  total_health_benefit: 515,
+  remaining_budget: 1200,
+  remaining_inspectors: 0,
+  disclaimer: "Indicative respiratory exposure risk, estimated using published WHO/Lancet exposure-response coefficients."
+};
+
 export default function DecisionPanel({ baselineAqi = 245, apiBase = "" }) {
   const [budget, setBudget] = useState(4000);
   const [inspectors, setInspectors] = useState(6);
   const [maxTravelTime, setMaxTravelTime] = useState(3.0);
   
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState(null);
+  const [results, setResults] = useState(DEFAULT_DECISION_RESULTS);
   const [error, setError] = useState(null);
 
   // Function to run optimizer
   const fetchOptimizedDecisions = async () => {
-    setLoading(true);
+    setError(null);
     setError(null);
     try {
       const url = `${apiBase}/api/v1/decision?budget=${budget}&inspectors=${inspectors}&max_travel_time_hours=${maxTravelTime}`;

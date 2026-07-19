@@ -5,7 +5,7 @@ Pydantic schemas representing request and response shapes for Vaeris API endpoin
 Provides validation and documentation boundaries.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -302,14 +302,16 @@ class AdvisoryRequest(BaseModel):
     """
 
     current_aqi: float = Field(..., description="Current measured AQI value", ge=0.0)
-    forecasted_aqi: float = Field(
-        default=None, description="Forecasted 24h AQI value (optional)", ge=0.0
+    forecasted_aqi: Optional[float] = Field(
+        default=None, description="Forecasted 24h AQI value (optional)"
     )
     primary_cause: str = Field(
         default="traffic", description="Attributed primary cause of pollution spike"
     )
     language: str = Field(
-        default="en", description="Target language code: 'en' (English) or 'hi' (Hindi)"
+        default="en",
+        description="Target language code: 'en' (English), 'hi' (Hindi), 'kn' (Kannada), or 'ta' (Tamil)",
+        pattern="^(en|hi|kn|ta)$",
     )
     enable_llm: bool = Field(
         default=True, description="Flag to enable LLM summary generation"

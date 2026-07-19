@@ -1,0 +1,46 @@
+[
+  {
+    "episode_id": "EP_AGRI_01",
+    "ground_truth_cause": "agricultural_burning",
+    "latitude": 28.6476,
+    "longitude": 77.3158,
+    "aqi_now": 340.0,
+    "aqi_rolling_mean_24h": 210.0,
+    "wind_direction_deg": 270.0,
+    "wind_speed_ms": 3.5,
+    "road_density_500m": 0.4,
+    "land_use_category": "agricultural",
+    "hour_of_day": 14,
+    "fire_events": [
+      {"distance_km": 42.0, "bearing_deg": 270.0, "detected_hours_ago": 3.5}
+    ]
+  },
+  {
+    "episode_id": "EP_TRAFFIC_01",
+    "ground_truth_cause": "traffic",
+    "latitude": 28.6286,
+    "longitude": 77.2410,
+    "aqi_now": 285.0,
+    "aqi_rolling_mean_24h": 180.0,
+    "wind_direction_deg": 180.0,
+    "wind_speed_ms": 2.0,
+    "road_density_500m": 0.85,
+    "land_use_category": "mixed",
+    "hour_of_day": 9,
+    "fire_events": []
+  },
+  {
+    "episode_id": "EP_IND_01",
+    "ground_truth_cause": "industrial",
+    "latitude": 28.5448,
+    "longitude": 77.2858,
+    "aqi_now": 260.0,
+    "aqi_rolling_mean_24h": 190.0,
+    "wind_direction_deg": 90.0,
+    "wind_speed_ms": 1.5,
+    "road_density_500m": 0.3,
+    "land_use_category": "industrial",
+    "hour_of_day": 3,
+    "fire_events": []
+  }
+]

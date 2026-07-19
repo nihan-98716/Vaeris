@@ -210,3 +210,55 @@ def stagnant_conditions_modifier(signals: dict) -> float:
     if wind_speed_ms < STAGNANT_WIND_SPEED_MS:
         return 0.6  # meaningfully reduce confidence in any single-source attribution
     return 1.0
+
+
+def construction_attribution_rule(signals: dict) -> RuleResult:
+    """
+    Construction attribution: active construction permits within 1km buffer
+    during operating hours (08:00-18:00) with elevated coarse particulate.
+    """
+    permit_count = signals.get("active_permits_1km", 0)
+    hour_of_day = signals.get("hour_of_day")
+    aqi_high = signals.get("aqi_now", 0.0) >= 100.0
+
+    if permit_count <= 0 or not aqi_high:
+        return RuleResult(source="construction", strength=0.0, evidence=[])
+
+    is_operating_hours = hour_of_day is not None and (8 <= hour_of_day <= 18)
+    strength = 0.65 if is_operating_hours else 0.25
+
+    evidence = [
+        f"{permit_count} active construction permit(s) detected within 1km buffer",
+        (
+            f"AQI elevation occurs during active construction operating hours (hour {hour_of_day})"
+            if is_operating_hours
+            else "Elevation occurs outside typical construction operating hours"
+        ),
+    ]
+    return RuleResult(source="construction", strength=strength, evidence=evidence)
+
+
+def industrial_stack_rule(signals: dict) -> RuleResult:
+    """
+    Industrial Stack attribution: evaluates upwind bearing alignment towards known
+    coal/brick kiln stack facilities within 10km radius.
+    """
+    stacks: List[dict] = signals.get("industrial_stacks_upwind", [])
+    wind_dir = signals.get("wind_direction_deg")
+    aqi_high = signals.get("aqi_now", 0.0) >= 100.0
+
+    if not stacks or wind_dir is None or not aqi_high:
+        return RuleResult(source="industrial_stack", strength=0.0, evidence=[])
+
+    best_stack = stacks[0]
+    dist_km = best_stack.get("distance_km", 5.0)
+    facility_name = best_stack.get("facility_name", "Industrial Stack Facility")
+
+    strength = max(0.4, min(0.9, 1.0 - (dist_km / 10.0)))
+
+    evidence = [
+        f"Upwind alignment with registered industrial stack: '{facility_name}' ({dist_km:.1f}km away)",
+        f"Wind vector ({wind_dir:.0f} deg) directly intersects stack emission plume radius",
+    ]
+    return RuleResult(source="industrial_stack", strength=strength, evidence=evidence)
+
