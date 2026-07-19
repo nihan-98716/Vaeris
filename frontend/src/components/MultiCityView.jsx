@@ -111,13 +111,12 @@ function getSourceIcon(source) {
 }
 
 export default function MultiCityView({ apiBase }) {
-  const [data, setData]       = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData]       = useState(LOCAL_CITIES_DATA);
+  const [loading, setLoading] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
 
     async function fetchMultiCity() {
       try {

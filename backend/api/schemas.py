@@ -5,7 +5,7 @@ Pydantic schemas representing request and response shapes for Vaeris API endpoin
 Provides validation and documentation boundaries.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -57,6 +57,17 @@ class AttributionRequest(BaseModel):
     )
 
 
+class WardInfo(BaseModel):
+    """
+    Validated municipal ward boundary spatial details.
+    """
+
+    ward_id: str = Field(..., description="Unique MCD Ward identifier")
+    ward_name: str = Field(..., description="Name of the municipal ward")
+    zone_name: str = Field(..., description="Name of the municipal zone")
+    city: str = Field(default="Delhi", description="City governing authority")
+
+
 class AttributionResponse(BaseModel):
     """
     Validated response model matching AttributionResult format.
@@ -73,6 +84,9 @@ class AttributionResponse(BaseModel):
     )
     degraded_sources: List[str] = Field(
         ..., description="Sources excluded due to missing signals or sensor failures"
+    )
+    ward_info: WardInfo = Field(
+        default=None, description="Municipal ward and zone spatial details"
     )
 
 
@@ -287,14 +301,16 @@ class AdvisoryRequest(BaseModel):
     """
 
     current_aqi: float = Field(..., description="Current measured AQI value", ge=0.0)
-    forecasted_aqi: float = Field(
-        default=None, description="Forecasted 24h AQI value (optional)", ge=0.0
+    forecasted_aqi: Optional[float] = Field(
+        default=None, description="Forecasted 24h AQI value (optional)"
     )
     primary_cause: str = Field(
         default="traffic", description="Attributed primary cause of pollution spike"
     )
     language: str = Field(
-        default="en", description="Target language code: 'en' (English) or 'hi' (Hindi)"
+        default="en",
+        description="Target language code: 'en' (English), 'hi' (Hindi), 'kn' (Kannada), or 'ta' (Tamil)",
+        pattern="^(en|hi|kn|ta)$",
     )
     enable_llm: bool = Field(
         default=True, description="Flag to enable LLM summary generation"

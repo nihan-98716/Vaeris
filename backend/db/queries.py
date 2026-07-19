@@ -235,3 +235,95 @@ def get_offline_snapshot_history(
     except Exception:
         logger.error("Failed to load offline snapshot history CSV", exc_info=True)
         return pd.DataFrame()
+
+
+def find_ward_for_location(lat: float, lon: float) -> Dict[str, Any]:
+    """
+    Finds the municipal ward containing or nearest to the given coordinates.
+    Tries PostGIS ST_Contains / ST_Distance first, falling back to coordinate lookup.
+    """
+    query = """
+        SELECT ward_id, ward_name, zone_name, city,
+               ST_Distance(geom, ST_SetSRID(ST_MakePoint(%s, %s), 4326)) AS distance
+        FROM ward_boundaries
+        ORDER BY ST_Contains(geom, ST_SetSRID(ST_MakePoint(%s, %s), 4326)) DESC,
+                 geom <-> ST_SetSRID(ST_MakePoint(%s, %s), 4326)
+        LIMIT 1;
+    """
+    try:
+        with get_db_cursor() as cursor:
+            cursor.execute(query, (lon, lat, lon, lat, lon, lat))
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+    except Exception:
+        logger.warning(
+            "PostGIS ward boundary query failed; using offline ward calculation."
+        )
+
+    # Offline / Snapshot Fallback based on coordinate proximity
+    fallback_wards = [
+        {
+            "ward_id": "WARD_DEL_001",
+            "ward_name": "Civil Lines Ward",
+            "zone_name": "Civil Lines Zone",
+            "city": "Delhi",
+            "lat": 28.69,
+            "lon": 77.21,
+        },
+        {
+            "ward_id": "WARD_DEL_002",
+            "ward_name": "Karol Bagh Ward",
+            "zone_name": "Karol Bagh Zone",
+            "city": "Delhi",
+            "lat": 28.65,
+            "lon": 77.18,
+        },
+        {
+            "ward_id": "WARD_DEL_003",
+            "ward_name": "Connaught Place Ward",
+            "zone_name": "New Delhi Zone",
+            "city": "Delhi",
+            "lat": 28.61,
+            "lon": 77.22,
+        },
+        {
+            "ward_id": "WARD_DEL_004",
+            "ward_name": "Dwarka Ward",
+            "zone_name": "Najafgarh Zone",
+            "city": "Delhi",
+            "lat": 28.57,
+            "lon": 77.03,
+        },
+        {
+            "ward_id": "WARD_DEL_005",
+            "ward_name": "Rohini Ward",
+            "zone_name": "Rohini Zone",
+            "city": "Delhi",
+            "lat": 28.73,
+            "lon": 77.11,
+        },
+        {
+            "ward_id": "WARD_DEL_006",
+            "ward_name": "Okhla Ward",
+            "zone_name": "Central Zone",
+            "city": "Delhi",
+            "lat": 28.52,
+            "lon": 77.27,
+        },
+    ]
+
+    best_ward = fallback_wards[2]
+    best_dist = float("inf")
+    for w in fallback_wards:
+        dist = haversine_distance(lat, lon, w["lat"], w["lon"])
+        if dist < best_dist:
+            best_dist = dist
+            best_ward = w
+
+    return {
+        "ward_id": best_ward["ward_id"],
+        "ward_name": best_ward["ward_name"],
+        "zone_name": best_ward["zone_name"],
+        "city": best_ward["city"],
+    }

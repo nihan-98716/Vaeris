@@ -17,7 +17,7 @@
 // corresponding /api/v1/forecast and /api/v1/attribution responses.
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer, ReferenceLine } from "recharts";
-import { AlertTriangle, ShieldAlert } from "lucide-react";
+import { AlertTriangle, ShieldAlert, MapPin } from "lucide-react";
 
 const FEATURE_LABELS = {
   aqi_lag_1h: "AQI 1h ago",
@@ -67,6 +67,12 @@ const DEFAULT_ATTRIBUTION = {
     "AQI rose 38 points in the 3 hours following estimated smoke arrival",
   ],
   degraded_sources: [],
+  ward_info: {
+    ward_id: "WARD_DEL_003",
+    ward_name: "Connaught Place Ward",
+    zone_name: "New Delhi Zone",
+    city: "Delhi",
+  },
 };
 
 function AttributionBar({ label, pct, isPrimary }) {
@@ -117,8 +123,21 @@ export default function ExplainPanel({
 
   return (
     <div className="w-full rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-neutral-800">Why this prediction?</h3>
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-neutral-800">Why this prediction?</h3>
+          {attribution?.ward_info && (
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-neutral-600">
+              <MapPin size={12} className="text-rose-500 shrink-0" />
+              <span className="font-medium text-neutral-700">
+                {attribution.ward_info.ward_name}
+              </span>
+              <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-500">
+                {attribution.ward_info.zone_name}
+              </span>
+            </div>
+          )}
+        </div>
         {modelVersion && (
           <span className="text-[10px] text-neutral-400">model {modelVersion}</span>
         )}

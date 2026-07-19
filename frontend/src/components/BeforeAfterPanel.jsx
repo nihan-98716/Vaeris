@@ -62,18 +62,35 @@ const CONFIDENCE_COLORS = { high: '#10b981', medium: '#f59e0b', low: '#ef4444' }
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
+const DEFAULT_FALLBACK = OFFLINE_REDUCTIONS.traffic;
+const DEFAULT_PROJECTED = Math.max(10, 300 - DEFAULT_FALLBACK.reduction);
+
 export default function BeforeAfterPanel({ currentAqi, primaryCause, apiBase }) {
-  const [decisionData, setDecisionData] = useState(null);
-  const [scenarioData, setScenarioData] = useState(null);
-  const [loading, setLoading]           = useState(true);
-  const [apiOk, setApiOk]               = useState(false);
+  const [decisionData, setDecisionData] = useState({
+    selected_interventions:   DEFAULT_FALLBACK.interventions,
+    total_aqi_reduction:      DEFAULT_FALLBACK.interventions.reduce((s, i) => s + i.aqi_reduction, 0),
+    total_cost:               DEFAULT_FALLBACK.interventions.reduce((s, i) => s + i.cost, 0),
+    total_health_benefit:     DEFAULT_FALLBACK.interventions.reduce((s, i) => s + i.health_benefit, 0),
+    total_population_affected: DEFAULT_FALLBACK.interventions.reduce((s, i) => s + i.population_affected, 0),
+    total_inspectors_used:    2,
+    remaining_budget:         DEFAULT_BUDGET - DEFAULT_FALLBACK.interventions.reduce((s, i) => s + i.cost, 0),
+    remaining_inspectors:     DEFAULT_INSPECTORS - 2,
+  });
+  const [scenarioData, setScenarioData] = useState({
+    projected_aqi:       DEFAULT_PROJECTED,
+    reduction_applied:   DEFAULT_FALLBACK.reduction,
+    source_weight_factor: 0.7,
+    confidence:          'high',
+    current_aqi:         300,
+    percent_reduction:   parseFloat(((DEFAULT_FALLBACK.reduction / 300) * 100).toFixed(1)),
+  });
+  const [apiOk, setApiOk]               = useState(true);
 
   const baselineAqi = Math.round(currentAqi || 300);
   const cause       = primaryCause || 'traffic';
 
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
 
     async function fetchScenario() {
       try {
@@ -126,28 +143,15 @@ export default function BeforeAfterPanel({ currentAqi, primaryCause, apiBase }) 
           total_population_affected: fallback.interventions.reduce((s, i) => s + i.population_affected, 0),
           total_inspectors_used:    2,
           remaining_budget:         DEFAULT_BUDGET - fallback.interventions.reduce((s, i) => s + i.cost, 0),
-          remaining_inspectors:     DEFAULT_INSPECTORS - 2,
         });
       } finally {
-        if (isMounted) setLoading(false);
+        // fetch complete
       }
     }
 
     fetchScenario();
     return () => { isMounted = false; };
   }, [baselineAqi, cause, apiBase]);
-
-  // ── Loading skeleton ──
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div className="shimmer" style={{ height: 120, borderRadius: 10 }} />
-        <div className="shimmer" style={{ height: 52,  borderRadius: 8 }} />
-        <div className="shimmer" style={{ height: 44,  borderRadius: 8 }} />
-        <div className="shimmer" style={{ height: 44,  borderRadius: 8 }} />
-      </div>
-    );
-  }
 
   const beforeCat  = getAqiCategory(baselineAqi);
   const afterCat   = scenarioData ? getAqiCategory(scenarioData.projected_aqi) : null;

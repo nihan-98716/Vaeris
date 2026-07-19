@@ -107,3 +107,24 @@ async def get_forecast(req: ForecastRequest = Depends()):
             status_code=500,
             detail=f"Internal model prediction error: {str(e)}",
         ) from e
+
+
+@router.get("/grid")
+async def get_forecast_grid(city: str = "Delhi", horizon_hours: int = 24):
+    """
+    Returns spatial GeoJSON surface grid containing q10, q50, q90 forecast quantiles.
+    Supports MapLibre GL heatmap and polygon fill-extrusion visualization.
+    """
+    cache_key = f"forecast:grid:{city.lower()}:{horizon_hours}h"
+    cached_data = get_cached_value(cache_key)
+    if cached_data:
+        try:
+            return json.loads(cached_data)
+        except Exception:
+            pass
+
+    from backend.models.forecasting.grid_inference import generate_spatial_grid_geojson
+
+    geojson = generate_spatial_grid_geojson(city=city, horizon_hours=horizon_hours)
+    set_cached_value(cache_key, json.dumps(geojson), ttl_seconds=3600)
+    return geojson

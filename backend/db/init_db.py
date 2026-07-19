@@ -154,6 +154,62 @@ def seed_database() -> None:
                     VALUES (28.0, 76.5, 29.0, 77.5, 150)
                     ON CONFLICT DO NOTHING;
                     """)
+
+                # Seed Delhi MCD Ward Boundaries
+                wards = [
+                    (
+                        "WARD_DEL_001",
+                        "Civil Lines Ward",
+                        "Civil Lines Zone",
+                        "Delhi",
+                        "POLYGON((77.18 28.66, 77.24 28.66, 77.24 28.72, 77.18 28.72, 77.18 28.66))",
+                    ),
+                    (
+                        "WARD_DEL_002",
+                        "Karol Bagh Ward",
+                        "Karol Bagh Zone",
+                        "Delhi",
+                        "POLYGON((77.15 28.62, 77.21 28.62, 77.21 28.68, 77.15 28.68, 77.15 28.62))",
+                    ),
+                    (
+                        "WARD_DEL_003",
+                        "Connaught Place Ward",
+                        "New Delhi Zone",
+                        "Delhi",
+                        "POLYGON((77.19 28.58, 77.25 28.58, 77.25 28.64, 77.19 28.64, 77.19 28.58))",
+                    ),
+                    (
+                        "WARD_DEL_004",
+                        "Dwarka Ward",
+                        "Najafgarh Zone",
+                        "Delhi",
+                        "POLYGON((76.98 28.52, 77.08 28.52, 77.08 28.61, 76.98 28.61, 76.98 28.52))",
+                    ),
+                    (
+                        "WARD_DEL_005",
+                        "Rohini Ward",
+                        "Rohini Zone",
+                        "Delhi",
+                        "POLYGON((77.05 28.69, 77.16 28.69, 77.16 28.78, 77.05 28.78, 77.05 28.69))",
+                    ),
+                    (
+                        "WARD_DEL_006",
+                        "Okhla Ward",
+                        "Central Zone",
+                        "Delhi",
+                        "POLYGON((77.22 28.48, 77.32 28.48, 77.32 28.56, 77.22 28.56, 77.22 28.48))",
+                    ),
+                ]
+                for w_id, w_name, z_name, city, wkt in wards:
+                    cursor.execute(
+                        """
+                        INSERT INTO ward_boundaries (ward_id, ward_name, zone_name, city, geom)
+                        VALUES (%s, %s, %s, %s, ST_GeomFromText(%s, 4326))
+                        ON CONFLICT (ward_id) DO NOTHING;
+                        """,
+                        (w_id, w_name, z_name, city, wkt),
+                    )
+
                 logger.info("Successfully seeded database from offline snapshot.")
     except Exception as e:
         logger.error(f"Error seeding database: {e}", exc_info=True)
