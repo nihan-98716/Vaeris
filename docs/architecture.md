@@ -67,7 +67,7 @@ flowchart TD
 
 ---
 
-## Phase 12 Production Database Schema
+## Production Database Schema
 
 The database relies on **PostgreSQL 15 + PostGIS 3** with spatial GiST indexing across all geometry fields:
 
