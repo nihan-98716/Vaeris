@@ -12,7 +12,7 @@ import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.cache import get_cached_value, set_cached_value
-from backend.api.schemas import AttributionRequest, AttributionResponse
+from backend.api.schemas import AttributionRequest, AttributionResponse, WardInfo
 from backend.config import settings
 from backend.db import queries
 from backend.db.connection import get_db_cursor
@@ -21,6 +21,7 @@ from backend.models.attribution import rule_engine
 from backend.models.schemas import LatLon
 
 router = APIRouter(prefix="/attribution", tags=["Attribution"])
+
 
 
 def _get_active_fires_for_attribution(
@@ -225,11 +226,20 @@ async def get_attribution(req: AttributionRequest = Depends()):
             signals, unavailable_sources=unavailable_sources
         )
 
+        ward_data = queries.find_ward_for_location(req.latitude, req.longitude)
+        ward_info = WardInfo(
+            ward_id=ward_data["ward_id"],
+            ward_name=ward_data["ward_name"],
+            zone_name=ward_data["zone_name"],
+            city=ward_data.get("city", "Delhi"),
+        )
+
         response_data = AttributionResponse(
             primary_cause=result.primary_cause,
             confidence_breakdown=result.confidence_breakdown,
             evidence=result.evidence,
             degraded_sources=result.degraded_sources,
+            ward_info=ward_info,
         )
 
         # 3. Write back to Redis cache

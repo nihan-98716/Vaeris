@@ -18,8 +18,11 @@ from backend.api.schemas import (
     ForecastResponse,
     InvestigateResponse,
     ScenarioResponse,
+    WardInfo,
 )
+from backend.db import queries
 from backend.decision.optimizer import optimize_interventions
+
 from backend.decision.scenario_approximation import compute_projected_aqi
 from backend.logging import logger
 from backend.models.attribution import rule_engine
@@ -105,11 +108,20 @@ def run_investigation_pipeline(
     )
 
     # Compile adjusted attribution response based on verifier outputs
+    ward_data = queries.find_ward_for_location(latitude, longitude)
+    ward_info = WardInfo(
+        ward_id=ward_data["ward_id"],
+        ward_name=ward_data["ward_name"],
+        zone_name=ward_data["zone_name"],
+        city=ward_data.get("city", "Delhi"),
+    )
+
     attribution_resp = AttributionResponse(
         primary_cause=attribution_result.primary_cause,
         confidence_breakdown=verification_result.adjusted_confidence_breakdown,
         evidence=attribution_result.evidence,
         degraded_sources=attribution_result.degraded_sources,
+        ward_info=ward_info,
     )
 
     # 8. Generate natural language summary (with timeout and fallback)

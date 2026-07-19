@@ -57,6 +57,17 @@ class AttributionRequest(BaseModel):
     )
 
 
+class WardInfo(BaseModel):
+    """
+    Validated municipal ward boundary spatial details.
+    """
+
+    ward_id: str = Field(..., description="Unique MCD Ward identifier")
+    ward_name: str = Field(..., description="Name of the municipal ward")
+    zone_name: str = Field(..., description="Name of the municipal zone")
+    city: str = Field(default="Delhi", description="City governing authority")
+
+
 class AttributionResponse(BaseModel):
     """
     Validated response model matching AttributionResult format.
@@ -74,6 +85,10 @@ class AttributionResponse(BaseModel):
     degraded_sources: List[str] = Field(
         ..., description="Sources excluded due to missing signals or sensor failures"
     )
+    ward_info: WardInfo = Field(
+        default=None, description="Municipal ward and zone spatial details"
+    )
+
 
 
 class DecisionRequest(BaseModel):
