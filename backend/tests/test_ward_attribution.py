@@ -7,7 +7,6 @@ Unit and integration tests for municipal ward boundary spatial joins and ward-le
 from fastapi.testclient import TestClient
 
 from backend.api.main import app
-from backend.api.schemas import WardInfo
 from backend.db.queries import find_ward_for_location
 
 client = TestClient(app)
@@ -29,7 +28,9 @@ def test_find_ward_for_location_connaught_place():
 
 
 def test_attribution_endpoint_includes_ward_info():
-    response = client.get("/api/v1/attribution", params={"latitude": 28.6139, "longitude": 77.2090})
+    response = client.get(
+        "/api/v1/attribution", params={"latitude": 28.6139, "longitude": 77.2090}
+    )
     assert response.status_code == 200
     data = response.json()
     assert "ward_info" in data

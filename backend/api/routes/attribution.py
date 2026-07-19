@@ -23,7 +23,6 @@ from backend.models.schemas import LatLon
 router = APIRouter(prefix="/attribution", tags=["Attribution"])
 
 
-
 def _get_active_fires_for_attribution(
     t_start: pd.Timestamp, t_end: pd.Timestamp, latest_ts: pd.Timestamp
 ) -> list:
@@ -62,12 +61,18 @@ def _get_active_fires_for_attribution(
                 with open(snapshot_path, "r") as f:
                     snapshot_data = json.load(f)
                 # Ensure t_start and t_end are timezone-naive for safe comparison
-                t_start_naive = t_start.tz_localize(None) if t_start.tzinfo is not None else t_start
-                t_end_naive = t_end.tz_localize(None) if t_end.tzinfo is not None else t_end
+                t_start_naive = (
+                    t_start.tz_localize(None) if t_start.tzinfo is not None else t_start
+                )
+                t_end_naive = (
+                    t_end.tz_localize(None) if t_end.tzinfo is not None else t_end
+                )
 
                 for f in snapshot_data.get("fire_data", []):
                     f_ts = pd.to_datetime(f["acq_datetime"])
-                    f_ts_naive = f_ts.tz_localize(None) if f_ts.tzinfo is not None else f_ts
+                    f_ts_naive = (
+                        f_ts.tz_localize(None) if f_ts.tzinfo is not None else f_ts
+                    )
                     if t_start_naive <= f_ts_naive <= t_end_naive:
                         db_fires.append(f)
             except Exception as err:
@@ -87,7 +92,9 @@ def _extract_fire_events_for_attribution(
     retaining only those within 100km.
     """
     fire_events = []
-    latest_ts_naive = latest_ts.tz_localize(None) if latest_ts.tzinfo is not None else latest_ts
+    latest_ts_naive = (
+        latest_ts.tz_localize(None) if latest_ts.tzinfo is not None else latest_ts
+    )
 
     for f in db_fires:
         f_lat = f["latitude"]
@@ -196,7 +203,9 @@ def gather_attribution_signals(location: LatLon) -> tuple[dict, list[str]]:
     elif lon >= 77.30:  # Anand Vihar / Border
         land_use = "agricultural"
         road_dens = 0.25
-    elif (28.62 <= lat <= 28.68 and 77.10 <= lon <= 77.25) or (abs(lat - 28.6286) < 0.02 and abs(lon - 77.2410) < 0.02):  # Punjabi Bagh, ITO
+    elif (28.62 <= lat <= 28.68 and 77.10 <= lon <= 77.25) or (
+        abs(lat - 28.6286) < 0.02 and abs(lon - 77.2410) < 0.02
+    ):  # Punjabi Bagh, ITO
         land_use = "traffic"
         road_dens = 0.88
     else:

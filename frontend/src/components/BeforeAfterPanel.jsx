@@ -84,7 +84,6 @@ export default function BeforeAfterPanel({ currentAqi, primaryCause, apiBase }) 
     current_aqi:         300,
     percent_reduction:   parseFloat(((DEFAULT_FALLBACK.reduction / 300) * 100).toFixed(1)),
   });
-  const [loading, setLoading]           = useState(false);
   const [apiOk, setApiOk]               = useState(true);
 
   const baselineAqi = Math.round(currentAqi || 300);
@@ -144,10 +143,9 @@ export default function BeforeAfterPanel({ currentAqi, primaryCause, apiBase }) 
           total_population_affected: fallback.interventions.reduce((s, i) => s + i.population_affected, 0),
           total_inspectors_used:    2,
           remaining_budget:         DEFAULT_BUDGET - fallback.interventions.reduce((s, i) => s + i.cost, 0),
-          remaining_inspectors:     DEFAULT_INSPECTORS - 2,
         });
       } finally {
-        if (isMounted) setLoading(false);
+        // fetch complete
       }
     }
 

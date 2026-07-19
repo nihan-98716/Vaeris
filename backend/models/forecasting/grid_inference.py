@@ -6,7 +6,6 @@ Interpolates meteorological features and station lags to generate high-resolutio
 spatial GeoJSON surface meshes for MapLibre GL visualization layers.
 """
 
-import math
 from typing import Any, Dict, List
 
 from backend.db import queries
@@ -41,7 +40,6 @@ def generate_spatial_grid_geojson(
     features: List[Dict[str, Any]] = []
 
     # Get baseline Delhi historical data for feature interpolation
-    base_loc = LatLon(latitude=28.6139, longitude=77.2090)
     try:
         history_df = queries.get_offline_snapshot_history("DL001", limit_hours=48)
     except Exception as e:

@@ -327,4 +327,3 @@ def find_ward_for_location(lat: float, lon: float) -> Dict[str, Any]:
         "zone_name": best_ward["zone_name"],
         "city": best_ward["city"],
     }
-

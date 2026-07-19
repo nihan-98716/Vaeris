@@ -90,7 +90,6 @@ class AttributionResponse(BaseModel):
     )
 
 
-
 class DecisionRequest(BaseModel):
     """
     Validated request parameters for intervention decision-optimization.

@@ -301,12 +301,13 @@ async def get_multi_city_trends(days: int = 30):
             # Generate consistent cyclic trend curve
             wave = math.sin(i / 3.0) * 25.0
             val = max(30.0, round(base + wave + ((i % 5) * 4), 1))
-            city_series.append({
-                "date": d.isoformat(),
-                "aqi": val,
-                "city": city,
-            })
+            city_series.append(
+                {
+                    "date": d.isoformat(),
+                    "aqi": val,
+                    "city": city,
+                }
+            )
         trends[city] = city_series
 
     return {"days": days, "trends": trends}
-

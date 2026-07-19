@@ -51,7 +51,9 @@ async def get_advisory_ivr(current_aqi: float = 320.0, language: str = "en"):
 
     from backend.agent.advisory_prompt import generate_advisory
 
-    adv = generate_advisory(current_aqi=current_aqi, language=language, enable_llm=False)
+    adv = generate_advisory(
+        current_aqi=current_aqi, language=language, enable_llm=False
+    )
     xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Say voice="alice" language="{language}">
@@ -75,8 +77,13 @@ async def get_advisory_display(current_aqi: float = 320.0, city: str = "Delhi"):
         "city": city,
         "aqi_value": int(current_aqi),
         "status_header": f"AQI {int(current_aqi)} - {adv.aqi_category.upper()}",
-        "line_1": adv.recommended_precautions[0] if adv.recommended_precautions else "STAY INDOORS",
+        "line_1": (
+            adv.recommended_precautions[0]
+            if adv.recommended_precautions
+            else "STAY INDOORS"
+        ),
         "line_2": "WEAR N95 MASKS OUTDOORS",
-        "alert_color": "RED" if current_aqi > 300 else "ORANGE" if current_aqi > 200 else "YELLOW",
+        "alert_color": (
+            "RED" if current_aqi > 300 else "ORANGE" if current_aqi > 200 else "YELLOW"
+        ),
     }
-

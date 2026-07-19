@@ -261,4 +261,3 @@ def industrial_stack_rule(signals: dict) -> RuleResult:
         f"Wind vector ({wind_dir:.0f} deg) directly intersects stack emission plume radius",
     ]
     return RuleResult(source="industrial_stack", strength=strength, evidence=evidence)
-

@@ -128,4 +128,3 @@ async def get_forecast_grid(city: str = "Delhi", horizon_hours: int = 24):
     geojson = generate_spatial_grid_geojson(city=city, horizon_hours=horizon_hours)
     set_cached_value(cache_key, json.dumps(geojson), ttl_seconds=3600)
     return geojson
-

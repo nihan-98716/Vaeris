@@ -18,7 +18,7 @@ import {
   Activity, 
   AlertTriangle, 
   MapPin, 
-  Layers, 
+  Layers,
   Clock, 
   TrendingUp,
   TrendingDown,
@@ -81,12 +81,11 @@ function App() {
   const [selectedStation, setSelectedStation] = useState(REPRESENTATIVE_STATIONS[1]); // Lodhi Road default
   const [forecast, setForecast] = useState(DEFAULT_FORECAST);
   const [attribution, setAttribution] = useState(DEFAULT_ATTRIBUTION);
-  const [loading, setLoading] = useState(false);
   const [apiConnected, setApiConnected] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('live'); // 'live' | 'replay' | 'before-after' | 'advisory' | 'multicity'
   const [liveTime, setLiveTime] = useState(new Date());
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [, setMapLoaded] = useState(false);
 
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -144,10 +143,13 @@ function App() {
         if (isMounted) {
           if (forecastData) setForecast(forecastData);
           if (attributionData) setAttribution(attributionData);
-          if (forecastData || attributionData) setApiConnected(true);
+          if (forecastData || attributionData) {
+            setApiConnected(true);
+            setErrorMessage(null);
+          }
         }
       } catch (err) {
-        // Keep existing/default data on error
+        setErrorMessage(err.message);
       }
     }
 

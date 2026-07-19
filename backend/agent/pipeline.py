@@ -22,7 +22,6 @@ from backend.api.schemas import (
 )
 from backend.db import queries
 from backend.decision.optimizer import optimize_interventions
-
 from backend.decision.scenario_approximation import compute_projected_aqi
 from backend.logging import logger
 from backend.models.attribution import rule_engine

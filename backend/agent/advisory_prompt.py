@@ -248,7 +248,9 @@ def get_deterministic_advisory(
     precautions = list(band.get(f"precautions_{lang}", band["precautions_en"]))
 
     if primary_cause in SOURCE_PRECAUTIONS:
-        src_msg = SOURCE_PRECAUTIONS[primary_cause].get(lang, SOURCE_PRECAUTIONS[primary_cause]["en"])
+        src_msg = SOURCE_PRECAUTIONS[primary_cause].get(
+            lang, SOURCE_PRECAUTIONS[primary_cause]["en"]
+        )
         precautions.append(src_msg)
 
     return AdvisoryResponse(

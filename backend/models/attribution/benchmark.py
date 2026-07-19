@@ -16,7 +16,9 @@ from backend.models.attribution import rule_engine
 def run_benchmark_eval(dataset_path: str = None) -> Dict[str, Any]:
     if dataset_path is None:
         base_dir = Path(__file__).resolve().parent.parent.parent.parent
-        dataset_path = str(base_dir / "data" / "benchmarks" / "ground_truth_episodes.json")
+        dataset_path = str(
+            base_dir / "data" / "benchmarks" / "ground_truth_episodes.json"
+        )
 
     p = Path(dataset_path)
     if not p.exists():

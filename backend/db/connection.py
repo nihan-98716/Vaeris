@@ -41,7 +41,7 @@ class DatabaseManager:
                 password=settings.database.password,
                 connect_timeout=3,
             )
-        except Exception as e:
+        except Exception:
             logger.critical(
                 "Failed to initialize database connection pool — running in offline mode",
                 exc_info=True,
@@ -56,6 +56,7 @@ class DatabaseManager:
         cls.initialize()
         if cls._pool is None:
             from psycopg2 import OperationalError
+
             raise OperationalError("Database pool unavailable — offline mode active")
         return cls._pool.getconn()
 
